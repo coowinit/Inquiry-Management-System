@@ -1,0 +1,53 @@
+<div class="card form-card">
+    <div class="card-header">
+        <h2>My Profile</h2>
+    </div>
+
+    <form method="post" action="<?= e(base_url('profile')) ?>" class="form-grid profile-form">
+        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+
+        <label class="form-label">
+            <span>Username</span>
+            <input type="text" class="form-input" value="<?= e($user['username'] ?? '') ?>" disabled>
+        </label>
+
+        <label class="form-label">
+            <span>Nickname</span>
+            <input type="text" name="nickname" class="form-input" value="<?= e($user['nickname'] ?? '') ?>" required>
+        </label>
+
+        <label class="form-label">
+            <span>Email</span>
+            <input type="email" name="email" class="form-input" value="<?= e($user['email'] ?? '') ?>" required>
+        </label>
+
+        <label class="form-label">
+            <span>Website</span>
+            <input type="url" name="website" class="form-input" value="<?= e($user['website'] ?? '') ?>">
+        </label>
+
+        <label class="form-label small-width">
+            <span>Page Size</span>
+            <input type="number" name="page_size" class="form-input" value="<?= e((string) ($user['page_size'] ?? 20)) ?>" min="10" max="100">
+        </label>
+
+        <label class="form-label full-width">
+            <span>Bio</span>
+            <textarea name="bio" class="form-input" rows="5"><?= e($user['bio'] ?? '') ?></textarea>
+        </label>
+
+        <label class="form-label">
+            <span>New Password</span>
+            <input type="password" name="password" class="form-input">
+        </label>
+
+        <label class="form-label">
+            <span>Confirm Password</span>
+            <input type="password" name="password_confirm" class="form-input">
+        </label>
+
+        <div class="full-width">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+</div>
