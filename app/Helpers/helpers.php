@@ -33,6 +33,20 @@ function config(string $key, mixed $default = null): mixed
     return $value;
 }
 
+function app_version(): string
+{
+    static $version = null;
+
+    if (is_string($version)) {
+        return $version;
+    }
+
+    $path = __DIR__ . '/../../VERSION.txt';
+    $version = file_exists($path) ? trim((string) file_get_contents($path)) : 'dev';
+
+    return $version !== '' ? $version : 'dev';
+}
+
 function base_url(string $path = ''): string
 {
     $base = rtrim((string) config('app.base_url', ''), '/');
@@ -124,6 +138,20 @@ function request_header(string $name): ?string
     return null;
 }
 
+function request_raw_body(): string
+{
+    static $body = null;
+
+    if (is_string($body)) {
+        return $body;
+    }
+
+    $raw = file_get_contents('php://input');
+    $body = is_string($raw) ? $raw : '';
+
+    return $body;
+}
+
 function json_input(): array
 {
     static $payload = null;
@@ -139,8 +167,7 @@ function json_input(): array
         return $payload;
     }
 
-    $raw = file_get_contents('php://input');
-    $decoded = json_decode($raw ?: '', true);
+    $decoded = json_decode(request_raw_body(), true);
     $payload = is_array($decoded) ? $decoded : [];
 
     return $payload;
@@ -222,7 +249,7 @@ function current_query(array $overrides = []): string
     $query = $_GET;
 
     foreach ($overrides as $key => $value) {
-        if ($value === null || $value === '') {
+        if ($value === null || $value == '') {
             unset($query[$key]);
             continue;
         }
@@ -243,4 +270,55 @@ function url_with_query(string $path, array $overrides = []): string
 function starts_with_ignore_case(string $haystack, string $needle): bool
 {
     return str_starts_with(strtolower($haystack), strtolower($needle));
+}
+
+function random_token(int $length = 32): string
+{
+    $bytes = max(8, intdiv($length + 1, 2));
+    return substr(bin2hex(random_bytes($bytes)), 0, $length);
+}
+
+function format_datetime(?string $value): string
+{
+    if (!$value) {
+        return '-';
+    }
+
+    try {
+        return (new DateTime($value))->format('Y-m-d H:i:s');
+    } catch (Throwable) {
+        return (string) $value;
+    }
+}
+
+function csv_escape(mixed $value): string
+{
+    if (is_array($value)) {
+        $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    return (string) $value;
+}
+
+function send_csv_download(string $filename, array $headers, iterable $rows): never
+{
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    $output = fopen('php://output', 'wb');
+    fputs($output, "\xEF\xBB\xBF");
+    fputcsv($output, $headers);
+
+    foreach ($rows as $row) {
+        $line = [];
+        foreach ($headers as $key) {
+            $line[] = csv_escape($row[$key] ?? '');
+        }
+        fputcsv($output, $line);
+    }
+
+    fclose($output);
+    exit;
 }

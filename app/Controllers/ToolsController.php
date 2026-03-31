@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Csrf;
 use App\Models\BlacklistIp;
+use App\Models\InquiryLog;
 
 final class ToolsController extends Controller
 {
@@ -39,9 +41,35 @@ final class ToolsController extends Controller
         $created = (new BlacklistIp())->create($ip, $reason !== '' ? $reason : null);
 
         if ($created) {
+            (new InquiryLog())->create(null, Auth::id(), 'blacklist_ip_added', 'Blocked IP ' . $ip);
             flash('success', 'Blocked IP added successfully.');
         } else {
             flash('error', 'Unable to add the blocked IP. It may already exist.');
+        }
+
+        redirect('tools/blacklist-ips');
+    }
+
+    public function deleteBlacklistIp(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('tools/blacklist-ips');
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            flash('error', 'Invalid blocked IP id.');
+            redirect('tools/blacklist-ips');
+        }
+
+        $deleted = (new BlacklistIp())->delete($id);
+
+        if ($deleted) {
+            (new InquiryLog())->create(null, Auth::id(), 'blacklist_ip_deleted', 'Deleted blocked IP #' . $id);
+            flash('success', 'Blocked IP removed successfully.');
+        } else {
+            flash('error', 'Unable to remove the blocked IP.');
         }
 
         redirect('tools/blacklist-ips');

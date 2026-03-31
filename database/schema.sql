@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS inquiry_sites (
     site_domain VARCHAR(255) NOT NULL,
     site_key VARCHAR(80) NOT NULL UNIQUE,
     api_token VARCHAR(100) NOT NULL,
+    signature_secret VARCHAR(150) DEFAULT NULL,
+    require_signature TINYINT(1) NOT NULL DEFAULT 0,
     status ENUM('active','inactive') NOT NULL DEFAULT 'active',
     notes TEXT DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

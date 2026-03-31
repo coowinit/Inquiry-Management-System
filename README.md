@@ -1,19 +1,17 @@
 # Inquiry Management System
 
-Version: **v0.2.0**
+Version: **v0.3.0**
 
 A pure PHP + MySQL inquiry management system for collecting inquiry forms from multiple websites into one centralized backend.
 
-## v0.2.0 Highlights
+## v0.3.0 Highlights
 
-- Unified receive API is ready: `/api/v1/inquiries/submit`
-- `site_key + api_token` validation
-- Required field validation for `name`, `email`, `content`
-- Stores both `extra_data` and `raw_payload`
-- Basic anti-spam checks
-- Blocked IP validation
-- Inquiry filters and quick status actions in the backend
-- GitHub Actions ZIP packaging workflow included
+- Site management now supports create, edit, and key rotation
+- Optional HMAC request signature verification per site
+- Inquiry CSV export is available from the inquiry list page
+- System log page is now available
+- Blocked IP entries can be removed in the backend
+- Health endpoint now returns the application version automatically
 
 ## Environment
 
@@ -31,6 +29,19 @@ A pure PHP + MySQL inquiry management system for collecting inquiry forms from m
 4. Point your web root to `public/`
 5. Open the project in your browser
 
+## Upgrading from v0.2.0
+
+If you already have a v0.2.0 database, run:
+
+- `database/upgrade-v0.3.0.sql`
+
+This adds:
+
+- `signature_secret`
+- `require_signature`
+
+to the `inquiry_sites` table.
+
 ## Default Admin Account
 
 - Username: `admin`
@@ -41,7 +52,10 @@ A pure PHP + MySQL inquiry management system for collecting inquiry forms from m
 - `/login`
 - `/dashboard`
 - `/inquiries`
+- `/inquiries/export`
 - `/sites`
+- `/sites/edit?id=1`
+- `/logs`
 - `/tools/blacklist-ips`
 - `/profile`
 
@@ -91,9 +105,23 @@ Supported payload types:
 
 Unknown fields will also be merged into `extra_data` automatically.
 
+## Signed Request Mode
+
+For sites with **Require HMAC signature** enabled:
+
+- Header: `X-Timestamp` = unix timestamp in seconds
+- Header: `X-Signature` = `hash_hmac('sha256', X-Timestamp + "\n" + raw_body, signature_secret)`
+
+Recommended usage:
+
+1. Your website backend builds the final request body
+2. Your website backend signs the raw body with the site's signature secret
+3. Your website backend sends the request to the central inquiry system
+
 ## Example Files
 
 - `examples/php-forwarder.php`
+- `examples/php-signed-forwarder.php`
 - `examples/javascript-fetch-example.js`
 
 ## GitHub Actions
@@ -105,8 +133,8 @@ Workflow file:
 It creates a ZIP package automatically when you push a tag like:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 ## Notes

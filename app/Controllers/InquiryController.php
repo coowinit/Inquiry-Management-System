@@ -19,17 +19,7 @@ final class InquiryController extends Controller
         $user = Auth::user();
         $perPage = max(10, min(100, (int) ($user['page_size'] ?? 20)));
 
-        $filters = [
-            'status' => trim((string) ($_GET['status'] ?? '')),
-            'site_id' => (int) ($_GET['site_id'] ?? 0),
-            'keyword' => trim((string) ($_GET['keyword'] ?? '')),
-            'date_from' => trim((string) ($_GET['date_from'] ?? '')),
-            'date_to' => trim((string) ($_GET['date_to'] ?? '')),
-        ];
-
-        if ($filters['site_id'] === 0) {
-            $filters['site_id'] = null;
-        }
+        $filters = $this->collectFilters();
 
         $inquiryModel = new Inquiry();
         $siteModel = new Site();
@@ -48,6 +38,7 @@ final class InquiryController extends Controller
     {
         $id = (int) ($_GET['id'] ?? 0);
         $inquiryModel = new Inquiry();
+        $logModel = new InquiryLog();
         $inquiry = $inquiryModel->find($id);
 
         if (!$inquiry) {
@@ -58,7 +49,7 @@ final class InquiryController extends Controller
 
         if ($inquiry['status'] === 'unread') {
             $inquiryModel->updateStatus($id, 'read');
-            (new InquiryLog())->create($id, Auth::id(), 'viewed', 'Marked as read from detail page');
+            $logModel->create($id, Auth::id(), 'viewed', 'Marked as read from detail page');
             $inquiry = $inquiryModel->find($id);
         }
 
@@ -78,6 +69,7 @@ final class InquiryController extends Controller
             'inquiry' => $inquiry,
             'extraData' => $extraData,
             'rawPayload' => $rawPayload,
+            'logs' => $logModel->latestForInquiry($id, 8),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -110,5 +102,41 @@ final class InquiryController extends Controller
 
         $back = trim((string) ($_POST['back'] ?? 'inquiries'));
         redirect($back);
+    }
+
+    public function exportCsv(): void
+    {
+        $filters = $this->collectFilters();
+        $rows = (new Inquiry())->exportRows($filters, 5000);
+
+        (new InquiryLog())->create(null, Auth::id(), 'inquiries_exported', 'Exported ' . count($rows) . ' rows as CSV');
+
+        send_csv_download(
+            'inquiries-' . date('Ymd-His') . '.csv',
+            [
+                'id', 'site_name', 'form_key', 'status', 'name', 'email', 'title', 'content',
+                'country', 'phone', 'address', 'from_company', 'source_url', 'referer_url',
+                'ip', 'browser', 'device_type', 'language', 'admin_note', 'submitted_at',
+                'created_at', 'updated_at', 'extra_data',
+            ],
+            $rows
+        );
+    }
+
+    private function collectFilters(): array
+    {
+        $filters = [
+            'status' => trim((string) ($_GET['status'] ?? '')),
+            'site_id' => (int) ($_GET['site_id'] ?? 0),
+            'keyword' => trim((string) ($_GET['keyword'] ?? '')),
+            'date_from' => trim((string) ($_GET['date_from'] ?? '')),
+            'date_to' => trim((string) ($_GET['date_to'] ?? '')),
+        ];
+
+        if ($filters['site_id'] === 0) {
+            $filters['site_id'] = null;
+        }
+
+        return $filters;
     }
 }

@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.3.0
+
+- Added site create and edit functions
+- Added API token rotation
+- Added signature secret rotation
+- Added optional HMAC signature verification per site
+- Added system logs page
+- Added CSV export from inquiry list
+- Added blocked IP delete action
+- Updated dashboard with v0.3.0 summary and recent logs
+- Added database upgrade script for v0.3.0
+- Added signed PHP forwarder example
+
 ## v0.2.0
 
 - Added unified receive API endpoint

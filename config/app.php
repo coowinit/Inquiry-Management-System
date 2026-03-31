@@ -16,5 +16,6 @@ return [
         'duplicate_window_minutes' => 10,
         'spam_link_threshold' => 2,
         'honeypot_field' => 'website',
+        'signature_timestamp_tolerance_seconds' => 300,
     ],
 ];

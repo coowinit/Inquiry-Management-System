@@ -68,6 +68,50 @@ final class Inquiry
         ];
     }
 
+    public function exportRows(array $filters = [], int $limit = 5000): array
+    {
+        [$whereSql, $bindings] = $this->buildWhere($filters);
+
+        $sql = 'SELECT
+                    i.id,
+                    s.site_name,
+                    i.form_key,
+                    i.status,
+                    i.name,
+                    i.email,
+                    i.title,
+                    i.content,
+                    i.country,
+                    i.phone,
+                    i.address,
+                    i.from_company,
+                    i.source_url,
+                    i.referer_url,
+                    i.ip,
+                    i.browser,
+                    i.device_type,
+                    i.language,
+                    i.admin_note,
+                    i.submitted_at,
+                    i.created_at,
+                    i.updated_at,
+                    i.extra_data
+                FROM inquiries i
+                LEFT JOIN inquiry_sites s ON s.id = i.site_id '
+                . $whereSql .
+                ' ORDER BY i.created_at DESC
+                LIMIT :limit';
+
+        $stmt = Database::connection()->prepare($sql);
+        foreach ($bindings as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    }
+
     public function find(int $id): array|false
     {
         $sql = 'SELECT i.*, s.site_name, s.site_domain

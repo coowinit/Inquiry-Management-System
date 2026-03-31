@@ -44,6 +44,9 @@ final class InquiryApiController extends Controller
             'user_agent_summary' => substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
             'accept_language' => $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '',
             'api_token' => $payload['api_token'] ?? '',
+            'raw_body' => request_raw_body(),
+            'signature' => request_header('X-Signature'),
+            'timestamp' => request_header('X-Timestamp'),
         ]);
 
         json_response($result['body'], $result['status_code']);
@@ -55,7 +58,7 @@ final class InquiryApiController extends Controller
         json_response([
             'success' => true,
             'message' => 'Inquiry receive API is ready.',
-            'version' => (string) config('app.api.version', 'v1'),
+            'version' => app_version(),
             'timestamp' => date('c'),
         ]);
     }
@@ -73,7 +76,7 @@ final class InquiryApiController extends Controller
         }
 
         header('Access-Control-Allow-Methods: POST, OPTIONS, GET');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Site-Token');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Site-Token, X-Signature, X-Timestamp');
         header('Access-Control-Max-Age: 86400');
     }
 }

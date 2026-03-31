@@ -53,6 +53,13 @@ final class InquiryReceiveService
             return $this->error('ORIGIN_FORBIDDEN', 'Origin or referer host does not match the configured site domain.', 403);
         }
 
+        if ((int) ($site['require_signature'] ?? 0) === 1) {
+            $signatureCheck = $this->validateSignature($site, $serverMeta);
+            if ($signatureCheck !== true) {
+                return $signatureCheck;
+            }
+        }
+
         $name = trim((string) ($payload['name'] ?? ''));
         $email = trim((string) ($payload['email'] ?? ''));
         $content = trim((string) ($payload['content'] ?? ''));
@@ -181,6 +188,40 @@ final class InquiryReceiveService
                 ],
             ],
         ];
+    }
+
+    private function validateSignature(array $site, array $serverMeta): array|bool
+    {
+        $providedSignature = trim((string) ($serverMeta['signature'] ?? ''));
+        $timestamp = trim((string) ($serverMeta['timestamp'] ?? ''));
+        $secret = trim((string) ($site['signature_secret'] ?? ''));
+        $rawBody = (string) ($serverMeta['raw_body'] ?? '');
+
+        if ($providedSignature === '' || $timestamp === '' || $secret === '') {
+            return $this->error('SIGNATURE_REQUIRED', 'This site requires X-Signature and X-Timestamp headers.', 401);
+        }
+
+        if (!ctype_digit($timestamp)) {
+            return $this->error('SIGNATURE_TIMESTAMP_INVALID', 'X-Timestamp must be a unix timestamp in seconds.', 401);
+        }
+
+        $tolerance = (int) config('app.api.signature_timestamp_tolerance_seconds', 300);
+        if (abs(time() - (int) $timestamp) > $tolerance) {
+            return $this->error('SIGNATURE_TIMESTAMP_EXPIRED', 'The request timestamp is outside the allowed time window.', 401);
+        }
+
+        $normalizedSignature = strtolower($providedSignature);
+        if (str_starts_with($normalizedSignature, 'sha256=')) {
+            $normalizedSignature = substr($normalizedSignature, 7);
+        }
+
+        $expectedSignature = hash_hmac('sha256', $timestamp . "\n" . $rawBody, $secret);
+
+        if (!hash_equals($expectedSignature, $normalizedSignature)) {
+            return $this->error('SIGNATURE_INVALID', 'The request signature is invalid.', 401);
+        }
+
+        return true;
     }
 
     private function collectExtraData(array $payload): array

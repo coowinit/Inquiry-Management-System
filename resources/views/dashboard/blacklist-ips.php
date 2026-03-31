@@ -33,12 +33,13 @@
                     <th>IP Address</th>
                     <th>Reason</th>
                     <th>Created At</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($items)): ?>
                     <tr>
-                        <td colspan="4" class="empty-cell">No blocked IP records.</td>
+                        <td colspan="5" class="empty-cell">No blocked IP records.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($items as $item): ?>
@@ -47,6 +48,13 @@
                             <td><code><?= e($item['ip_address']) ?></code></td>
                             <td><?= e($item['reason'] ?: '-') ?></td>
                             <td><?= e((string) $item['created_at']) ?></td>
+                            <td>
+                                <form method="post" action="<?= e(base_url('tools/blacklist-ips/delete')) ?>" class="inline-form">
+                                    <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                                    <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
+                                    <button type="submit" class="btn btn-sm">Delete</button>
+                                </form>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

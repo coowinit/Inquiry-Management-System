@@ -1,28 +1,23 @@
-const endpoint = 'https://your-domain.com/api/v1/inquiries/submit';
+// For token-only sites.
+// Do not use this pattern for signed sites, because the secret should stay on your backend.
 
-const payload = {
-  site_key: 'a_main',
-  api_token: 'token_a_main_2026',
-  form_key: 'sample_form',
-  name: 'Jane Doe',
-  email: 'jane@example.com',
-  title: 'Need sample pack',
-  content: 'Please send me a sample pack for decking colours.',
-  source_url: window.location.href,
-  submitted_at: new Date().toISOString(),
-  extra_data: {
-    preferred_colour: 'Teak',
-    project_type: 'Residential',
-  },
-};
-
-fetch(endpoint, {
+fetch('https://your-central-domain.com/api/v1/inquiries/submit', {
   method: 'POST',
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json'
   },
-  body: JSON.stringify(payload),
+  body: JSON.stringify({
+    site_key: 'a_main',
+    api_token: 'token_a_main_2026',
+    form_key: 'contact_form',
+    name: 'John Smith',
+    email: 'john@example.com',
+    content: 'I want more information about your products.',
+    extra_data: {
+      product_interest: 'Decking'
+    }
+  })
 })
-  .then((res) => res.json())
-  .then((data) => console.log('API response:', data))
-  .catch((err) => console.error('Submit failed:', err));
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch(error => console.error(error));

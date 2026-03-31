@@ -36,4 +36,11 @@ final class BlacklistIp
             return false;
         }
     }
+
+    public function delete(int $id): bool
+    {
+        $sql = 'DELETE FROM blacklist_ips WHERE id = :id';
+        $stmt = Database::connection()->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
 }
