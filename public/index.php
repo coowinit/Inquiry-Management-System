@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../bootstrap/app.php';
 
+use App\Controllers\Api\InquiryApiController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\InquiryController;
@@ -28,9 +29,15 @@ $router->get('/logout', [AuthController::class, 'logout'], true);
 $router->get('/dashboard', [DashboardController::class, 'index'], true);
 $router->get('/inquiries', [InquiryController::class, 'index'], true);
 $router->get('/inquiry', [InquiryController::class, 'show'], true);
+$router->post('/inquiry/status', [InquiryController::class, 'updateStatus'], true);
 $router->get('/sites', [SiteController::class, 'index'], true);
 $router->get('/tools/blacklist-ips', [ToolsController::class, 'blacklistIps'], true);
+$router->post('/tools/blacklist-ips', [ToolsController::class, 'addBlacklistIp'], true);
 $router->get('/profile', [SettingsController::class, 'profile'], true);
 $router->post('/profile', [SettingsController::class, 'updateProfile'], true);
+
+$router->options('/api/v1/inquiries/submit', [InquiryApiController::class, 'options']);
+$router->post('/api/v1/inquiries/submit', [InquiryApiController::class, 'submit']);
+$router->get('/api/v1/health', [InquiryApiController::class, 'health']);
 
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', request_path());

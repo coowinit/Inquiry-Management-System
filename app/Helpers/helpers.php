@@ -21,7 +21,16 @@ function config(string $key, mixed $default = null): mixed
         return $cache[$file] ?? $default;
     }
 
-    return $cache[$file][$item] ?? $default;
+    $value = $cache[$file];
+
+    foreach (explode('.', $item) as $segment) {
+        if (!is_array($value) || !array_key_exists($segment, $value)) {
+            return $default;
+        }
+        $value = $value[$segment];
+    }
+
+    return $value;
 }
 
 function base_url(string $path = ''): string
@@ -94,4 +103,144 @@ function request_path(): string
     }
 
     return '/' . trim($uri, '/') ?: '/';
+}
+
+function request_header(string $name): ?string
+{
+    $normalized = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+
+    if (isset($_SERVER[$normalized])) {
+        return trim((string) $_SERVER[$normalized]);
+    }
+
+    if ($name === 'Content-Type' && isset($_SERVER['CONTENT_TYPE'])) {
+        return trim((string) $_SERVER['CONTENT_TYPE']);
+    }
+
+    if ($name === 'Authorization' && isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+        return trim((string) $_SERVER['REDIRECT_HTTP_AUTHORIZATION']);
+    }
+
+    return null;
+}
+
+function json_input(): array
+{
+    static $payload = null;
+
+    if (is_array($payload)) {
+        return $payload;
+    }
+
+    $contentType = strtolower((string) request_header('Content-Type'));
+
+    if (!str_contains($contentType, 'application/json')) {
+        $payload = [];
+        return $payload;
+    }
+
+    $raw = file_get_contents('php://input');
+    $decoded = json_decode($raw ?: '', true);
+    $payload = is_array($decoded) ? $decoded : [];
+
+    return $payload;
+}
+
+function request_data(): array
+{
+    if (is_post()) {
+        $json = json_input();
+        if (!empty($json)) {
+            return $json;
+        }
+    }
+
+    return $_POST;
+}
+
+function json_response(array $data, int $status = 200, array $headers = []): never
+{
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+
+    foreach ($headers as $name => $value) {
+        header($name . ': ' . $value);
+    }
+
+    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+function request_ip(): string
+{
+    $candidates = [
+        $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null,
+        $_SERVER['HTTP_X_REAL_IP'] ?? null,
+        $_SERVER['REMOTE_ADDR'] ?? null,
+    ];
+
+    $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+    if ($forwarded !== '') {
+        foreach (explode(',', $forwarded) as $ip) {
+            $candidates[] = trim($ip);
+        }
+    }
+
+    foreach ($candidates as $candidate) {
+        if (is_string($candidate) && filter_var($candidate, FILTER_VALIDATE_IP)) {
+            return $candidate;
+        }
+    }
+
+    return '0.0.0.0';
+}
+
+function request_origin_host(): ?string
+{
+    $origin = request_header('Origin');
+    if (!$origin) {
+        return null;
+    }
+
+    $host = parse_url($origin, PHP_URL_HOST);
+    return is_string($host) ? strtolower($host) : null;
+}
+
+function request_referer_host(): ?string
+{
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    if ($referer === '') {
+        return null;
+    }
+
+    $host = parse_url($referer, PHP_URL_HOST);
+    return is_string($host) ? strtolower($host) : null;
+}
+
+function current_query(array $overrides = []): string
+{
+    $query = $_GET;
+
+    foreach ($overrides as $key => $value) {
+        if ($value === null || $value === '') {
+            unset($query[$key]);
+            continue;
+        }
+        $query[$key] = $value;
+    }
+
+    return http_build_query($query);
+}
+
+function url_with_query(string $path, array $overrides = []): string
+{
+    $query = current_query($overrides);
+    $url = base_url($path);
+
+    return $query !== '' ? $url . '?' . $query : $url;
+}
+
+function starts_with_ignore_case(string $haystack, string $needle): bool
+{
+    return str_starts_with(strtolower($haystack), strtolower($needle));
 }

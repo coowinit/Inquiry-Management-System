@@ -7,7 +7,6 @@ namespace App\Controllers;
 use App\Core\Controller;
 use App\Models\Site;
 
-
 final class SiteController extends Controller
 {
     public function index(): void
@@ -17,6 +16,7 @@ final class SiteController extends Controller
         $this->view('dashboard/sites', [
             'pageTitle' => 'Sites',
             'sites' => $siteModel->all(),
+            'apiEndpoint' => base_url('api/v1/inquiries/submit'),
         ]);
     }
 }

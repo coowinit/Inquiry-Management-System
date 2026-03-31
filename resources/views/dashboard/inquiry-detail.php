@@ -1,5 +1,38 @@
-<div class="detail-actions">
+<div class="detail-actions actions-wrap">
     <a href="<?= e(base_url('inquiries')) ?>" class="btn">Back</a>
+
+    <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form">
+        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+        <input type="hidden" name="status" value="unread">
+        <input type="hidden" name="back" value="<?= e('inquiry?id=' . (int) $inquiry['id']) ?>">
+        <button type="submit" class="btn">Mark Unread</button>
+    </form>
+
+    <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form">
+        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+        <input type="hidden" name="status" value="spam">
+        <input type="hidden" name="back" value="<?= e('inquiry?id=' . (int) $inquiry['id']) ?>">
+        <button type="submit" class="btn">Mark Spam</button>
+    </form>
+
+    <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form">
+        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+        <input type="hidden" name="status" value="trash">
+        <input type="hidden" name="back" value="<?= e('inquiry?id=' . (int) $inquiry['id']) ?>">
+        <button type="submit" class="btn">Move to Trash</button>
+    </form>
+
+    <?php if (!empty($inquiry['ip'])): ?>
+        <form method="post" action="<?= e(base_url('tools/blacklist-ips')) ?>" class="inline-form">
+            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+            <input type="hidden" name="ip_address" value="<?= e($inquiry['ip']) ?>">
+            <input type="hidden" name="reason" value="Added from inquiry #<?= (int) $inquiry['id'] ?>">
+            <button type="submit" class="btn">Block This IP</button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <div class="card detail-card">
@@ -15,7 +48,7 @@
                 <div><dt>Company</dt><dd><?= e($inquiry['from_company'] ?: '-') ?></dd></div>
                 <div><dt>Country</dt><dd><?= e($inquiry['country'] ?: '-') ?></dd></div>
                 <div><dt>Address</dt><dd><?= e($inquiry['address'] ?: '-') ?></dd></div>
-                <div><dt>Status</dt><dd><?= e((string) $inquiry['status']) ?></dd></div>
+                <div><dt>Status</dt><dd><span class="status-pill status-<?= e($inquiry['status']) ?>"><?= e((string) $inquiry['status']) ?></span></dd></div>
             </dl>
         </div>
 
@@ -29,7 +62,9 @@
                 <div><dt>Referer URL</dt><dd class="break-all"><?= e($inquiry['referer_url'] ?: '-') ?></dd></div>
                 <div><dt>IP</dt><dd><?= e($inquiry['ip'] ?: '-') ?></dd></div>
                 <div><dt>Browser</dt><dd><?= e($inquiry['browser'] ?: '-') ?></dd></div>
+                <div><dt>Device Type</dt><dd><?= e($inquiry['device_type'] ?: '-') ?></dd></div>
                 <div><dt>Language</dt><dd><?= e($inquiry['language'] ?: '-') ?></dd></div>
+                <div><dt>Submitted At</dt><dd><?= e((string) ($inquiry['submitted_at'] ?: '-')) ?></dd></div>
                 <div><dt>Created At</dt><dd><?= e((string) $inquiry['created_at']) ?></dd></div>
             </dl>
         </div>
@@ -50,7 +85,7 @@
                     <?php foreach ($extraData as $key => $value): ?>
                         <div>
                             <dt><?= e((string) $key) ?></dt>
-                            <dd><?= e(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : (string) $value) ?></dd>
+                            <dd><?= e(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value) ?></dd>
                         </div>
                     <?php endforeach; ?>
                 </dl>
@@ -62,7 +97,7 @@
             <?php if (empty($rawPayload)): ?>
                 <p class="muted">No raw payload.</p>
             <?php else: ?>
-                <pre class="code-box"><?= e(json_encode($rawPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)) ?></pre>
+                <pre class="code-box"><?= e(json_encode($rawPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?></pre>
             <?php endif; ?>
         </div>
     </div>

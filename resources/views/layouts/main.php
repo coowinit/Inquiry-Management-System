@@ -11,14 +11,14 @@
     <aside class="sidebar">
         <div class="sidebar-brand">
             <div class="brand-title"><?= e(config('app.name')) ?></div>
-            <div class="brand-version">v0.1.0</div>
+            <div class="brand-version">v0.2.0</div>
         </div>
 
         <nav class="sidebar-nav">
             <div class="nav-group-title">Main</div>
             <a href="<?= e(base_url('dashboard')) ?>" class="nav-link <?= request_path() === '/dashboard' ? 'is-active' : '' ?>">Dashboard</a>
             <a href="<?= e(base_url('inquiries')) ?>" class="nav-link <?= request_path() === '/inquiries' || request_path() === '/inquiry' ? 'is-active' : '' ?>">Inquiry Management</a>
-            <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' ? 'is-active' : '' ?>">Sites</a>
+            <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' ? 'is-active' : '' ?>">Sites & API</a>
 
             <div class="nav-group-title">Tools</div>
             <a href="<?= e(base_url('tools/blacklist-ips')) ?>" class="nav-link <?= request_path() === '/tools/blacklist-ips' ? 'is-active' : '' ?>">Blocked IPs</a>

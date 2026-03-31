@@ -1,7 +1,9 @@
 /vendor/
 /storage/logs/*.log
-/storage/uploads/*
-!/storage/uploads/.gitkeep
-.env
+/storage/cache/
+/node_modules/
+/dist/
+/.idea/
+/.vscode/
 .DS_Store
 Thumbs.db

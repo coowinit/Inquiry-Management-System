@@ -18,6 +18,11 @@ final class Router
         $this->add('POST', $path, $handler, $auth);
     }
 
+    public function options(string $path, array|callable $handler, bool $auth = false): void
+    {
+        $this->add('OPTIONS', $path, $handler, $auth);
+    }
+
     private function add(string $method, string $path, array|callable $handler, bool $auth): void
     {
         $this->routes[$method][$path] = [
