@@ -64,6 +64,18 @@
                 <textarea name="field_mapping_json" class="form-input" rows="8" placeholder="<?= e($mappingExample) ?>"></textarea>
             </label>
 
+            <div class="full-width soft-panel">
+                <div class="section-mini-title mb-12">Site Notification Override</div>
+                <div class="filter-grid">
+                    <label class="form-label"><span>Mode</span><select name="notification_mode" class="form-input"><option value="inherit">Inherit global settings</option><option value="disable">Disable for this site</option><option value="custom">Use site-specific settings</option></select></label>
+                    <label class="form-label"><span>Transport</span><select name="notification_transport" class="form-input"><option value="log_only">log_only</option><option value="mail">mail</option></select></label>
+                    <label class="form-label"><span>Subject Prefix</span><input type="text" name="notification_subject_prefix" class="form-input" placeholder="[IMS-A]"></label>
+                    <label class="form-label full-width"><span>Recipients</span><textarea name="notification_recipients" class="form-input" rows="4" placeholder="sales@example.com\nteam@example.com"></textarea></label>
+                    <label class="form-label checkbox-label full-width"><span>Notify Statuses</span><div class="checkbox-grid"><?php foreach (['unread', 'read', 'spam', 'trash'] as $status): ?><label class="checkbox-row"><input type="checkbox" name="notification_statuses[]" value="<?= e($status) ?>" <?= in_array($status, $notificationDefaults['notify_statuses'], true) ? 'checked' : '' ?>><span><?= e(ucfirst($status)) ?></span></label><?php endforeach; ?></div></label>
+                    <label class="form-label checkbox-label full-width"><span>Advanced</span><div class="checkbox-grid"><label class="checkbox-row"><input type="checkbox" name="notification_include_spam" value="1"> Include spam notifications</label><label class="checkbox-row"><input type="checkbox" name="notification_include_admin_link" value="1" checked> Include backend detail link</label></div></label>
+                </div>
+            </div>
+
             <label class="form-label full-width">
                 <span>Notes</span>
                 <textarea name="notes" class="form-input" rows="4" placeholder="Optional notes for this site"></textarea>
@@ -90,7 +102,7 @@
                     <th>Domain</th>
                     <th>Site Key</th>
                     <th>Mode</th>
-                    <th>Mapping</th>
+                    <th>Notifications</th>
                     <th>Stats</th>
                     <th>Last Inquiry</th>
                     <th>Actions</th>
@@ -103,7 +115,7 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($sites as $site): ?>
-                        <?php $hasMapping = !empty($site['field_mapping_json']); ?>
+                        <?php $siteNotif = (new \App\Models\Site())->notificationSettings($site); ?>
                         <tr>
                             <td>#<?= e((string) $site['id']) ?></td>
                             <td>
@@ -113,7 +125,7 @@
                             <td><?= e($site['site_domain']) ?></td>
                             <td><code><?= e($site['site_key']) ?></code></td>
                             <td><?= (int) ($site['require_signature'] ?? 0) === 1 ? 'Signed + Token' : 'Token Only' ?></td>
-                            <td><?= $hasMapping ? 'Custom JSON' : 'Default' ?></td>
+                            <td><?= e(ucfirst((string) ($siteNotif['mode'] ?? 'inherit'))) ?></td>
                             <td>
                                 <div class="table-sub"><?= e((string) ($site['inquiry_total'] ?? 0)) ?> total</div>
                                 <div class="table-sub"><?= e((string) ($site['unread_total'] ?? 0)) ?> unread</div>

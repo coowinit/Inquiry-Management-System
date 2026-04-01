@@ -36,19 +36,27 @@ final class ApiRequestLog
         ]);
     }
 
-    public function paginate(int $page = 1, int $perPage = 30): array
+    public function paginate(int $page = 1, int $perPage = 30, array $filters = []): array
     {
         $page = max(1, $page);
         $offset = ($page - 1) * $perPage;
         $pdo = Database::connection();
-        $total = (int) $pdo->query('SELECT COUNT(*) FROM api_request_logs')->fetchColumn();
+
+        [$whereSql, $bindings] = $this->buildWhere($filters);
+        $countStmt = $pdo->prepare('SELECT COUNT(*) FROM api_request_logs l ' . $whereSql);
+        $countStmt->execute($bindings);
+        $total = (int) $countStmt->fetchColumn();
 
         $sql = 'SELECT l.*, s.site_name
                 FROM api_request_logs l
-                LEFT JOIN inquiry_sites s ON s.id = l.site_id
-                ORDER BY l.created_at DESC, l.id DESC
+                LEFT JOIN inquiry_sites s ON s.id = l.site_id '
+                . $whereSql .
+                ' ORDER BY l.created_at DESC, l.id DESC
                 LIMIT :limit OFFSET :offset';
         $stmt = $pdo->prepare($sql);
+        foreach ($bindings as $key => $value) {
+            $stmt->bindValue(':' . $key, $value);
+        }
         $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
         $stmt->execute();
@@ -60,6 +68,18 @@ final class ApiRequestLog
             'per_page' => $perPage,
             'total_pages' => (int) ceil($total / max(1, $perPage)),
         ];
+    }
+
+    public function findById(int $id): array|false
+    {
+        $sql = 'SELECT l.*, s.site_name, s.site_domain
+                FROM api_request_logs l
+                LEFT JOIN inquiry_sites s ON s.id = l.site_id
+                WHERE l.id = :id
+                LIMIT 1';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
     }
 
     public function recent(int $limit = 8): array
@@ -85,5 +105,33 @@ final class ApiRequestLog
             ORDER BY response_status ASC');
         $stmt->execute(['start' => $start]);
         return $stmt->fetchAll();
+    }
+
+    private function buildWhere(array $filters): array
+    {
+        $clauses = [];
+        $bindings = [];
+
+        $siteId = (int) ($filters['site_id'] ?? 0);
+        if ($siteId > 0) {
+            $clauses[] = 'l.site_id = :site_id';
+            $bindings['site_id'] = $siteId;
+        }
+
+        $statusClass = trim((string) ($filters['status_class'] ?? ''));
+        if ($statusClass === 'success') {
+            $clauses[] = 'l.response_status < 400';
+        } elseif ($statusClass === 'error') {
+            $clauses[] = 'l.response_status >= 400';
+        }
+
+        $keyword = trim((string) ($filters['keyword'] ?? ''));
+        if ($keyword !== '') {
+            $clauses[] = '(l.site_key LIKE :keyword OR l.result_code LIKE :keyword OR l.result_message LIKE :keyword OR l.request_ip LIKE :keyword OR l.endpoint LIKE :keyword)';
+            $bindings['keyword'] = '%' . $keyword . '%';
+        }
+
+        $whereSql = $clauses === [] ? '' : ' WHERE ' . implode(' AND ', $clauses);
+        return [$whereSql, $bindings];
     }
 }

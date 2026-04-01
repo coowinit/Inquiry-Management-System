@@ -11,11 +11,11 @@ VALUES (
     'active'
 );
 
-INSERT INTO inquiry_sites (site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json)
+INSERT INTO inquiry_sites (site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json, notification_settings_json)
 VALUES
-('a.com Main Website', 'a.com', 'a_main', 'token_a_main_2026', 'sig_a_main_2026_secret_1234567890', 0, 'active', 'Primary official website', NULL),
-('b.com Sample Website', 'b.com', 'b_sample', 'token_b_sample_2026', 'sig_b_sample_2026_secret_1234567890', 1, 'active', 'Sample request website with signed requests', JSON_OBJECT('name', JSON_ARRAY('fullname'), 'email', JSON_ARRAY('user_email'), 'content', JSON_ARRAY('message'), 'from_company', JSON_ARRAY('company_name'))),
-('c.com Distributor Website', 'c.com', 'c_distributor', 'token_c_distributor_2026', 'sig_c_distributor_2026_secret_1234567890', 0, 'active', 'Distributor recruitment website', NULL);
+('a.com Main Website', 'a.com', 'a_main', 'token_a_main_2026', 'sig_a_main_2026_secret_1234567890', 0, 'active', 'Primary official website', NULL, NULL),
+('b.com Sample Website', 'b.com', 'b_sample', 'token_b_sample_2026', 'sig_b_sample_2026_secret_1234567890', 1, 'active', 'Sample request website with signed requests', JSON_OBJECT('name', JSON_ARRAY('fullname'), 'email', JSON_ARRAY('user_email'), 'content', JSON_ARRAY('message'), 'from_company', JSON_ARRAY('company_name')), JSON_OBJECT('mode', 'custom', 'transport', 'log_only', 'subject_prefix', '[B-SAMPLE]', 'recipients', JSON_ARRAY('samples@example.com'), 'notify_statuses', JSON_ARRAY('unread'), 'include_spam', false, 'include_admin_link', true)),
+('c.com Distributor Website', 'c.com', 'c_distributor', 'token_c_distributor_2026', 'sig_c_distributor_2026_secret_1234567890', 0, 'active', 'Distributor recruitment website', NULL, JSON_OBJECT('mode', 'disable', 'transport', 'log_only', 'subject_prefix', '', 'recipients', JSON_ARRAY(), 'notify_statuses', JSON_ARRAY('unread'), 'include_spam', false, 'include_admin_link', true));
 
 INSERT INTO system_settings (setting_key, setting_value)
 VALUES
@@ -175,3 +175,7 @@ INSERT INTO inquiry_followups (inquiry_id, admin_id, followup_type, content, nex
 INSERT INTO api_request_logs (site_key, site_id, endpoint, request_method, request_ip, origin_host, referer_host, response_status, result_code, result_message, request_headers_json, payload_json, response_json) VALUES
 ('a_main', 1, '/api/v1/inquiries/submit', 'POST', '174.7.22.43', 'a.com', 'a.com', 201, 'unread', 'Inquiry received successfully.', JSON_OBJECT('Content-Type', 'application/json'), JSON_OBJECT('site_key', 'a_main', 'name', 'Matthew Pickering'), JSON_OBJECT('success', true)),
 ('b_sample', 2, '/api/v1/inquiries/submit', 'POST', '174.7.22.44', 'b.com', 'b.com', 401, 'AUTH_INVALID', 'Invalid site credentials or inactive site.', JSON_OBJECT('Content-Type', 'application/json'), JSON_OBJECT('site_key', 'b_sample'), JSON_OBJECT('success', false));
+
+
+INSERT INTO export_templates (template_name, template_scope, admin_id, filters_json, columns_json) VALUES
+('Unread AU Samples', 'shared', 1, JSON_OBJECT('status', 'unread', 'site_id', '1', 'date_from', '', 'date_to', '', 'keyword', 'sample', 'has_note', '', 'assigned_admin_id', ''), JSON_ARRAY('id', 'site_name', 'status', 'name', 'email', 'country', 'title', 'content', 'created_at'));

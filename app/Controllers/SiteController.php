@@ -25,6 +25,7 @@ final class SiteController extends Controller
             'generatedToken' => random_token(32),
             'generatedSignatureSecret' => random_token(48),
             'mappingExample' => $this->mappingExample(),
+            'notificationDefaults' => $this->defaultNotificationSettings(),
         ]);
     }
 
@@ -67,6 +68,7 @@ final class SiteController extends Controller
         $this->view('dashboard/site-edit', [
             'pageTitle' => 'Edit Site',
             'site' => $site,
+            'siteNotificationSettings' => (new Site())->notificationSettings($site),
             'csrfToken' => Csrf::token(),
             'mappingExample' => $this->mappingExample(),
         ]);
@@ -186,6 +188,8 @@ final class SiteController extends Controller
             $status = 'active';
         }
 
+        $notificationSettingsJson = $this->buildNotificationSettingsJson();
+
         $data = [
             'site_name' => $siteName,
             'site_domain' => preg_replace('#^https?://#i', '', $siteDomain),
@@ -194,6 +198,7 @@ final class SiteController extends Controller
             'status' => $status,
             'notes' => $notes !== '' ? $notes : null,
             'field_mapping_json' => $fieldMappingJson,
+            'notification_settings_json' => $notificationSettingsJson,
         ];
 
         if ($includeSecrets) {
@@ -210,6 +215,45 @@ final class SiteController extends Controller
         }
 
         return $data;
+    }
+
+    private function buildNotificationSettingsJson(): ?string
+    {
+        $mode = trim((string) ($_POST['notification_mode'] ?? 'inherit'));
+        if (!in_array($mode, ['inherit', 'disable', 'custom'], true)) {
+            $mode = 'inherit';
+        }
+
+        if ($mode === 'inherit') {
+            return null;
+        }
+
+        $settings = [
+            'mode' => $mode,
+            'transport' => in_array(($_POST['notification_transport'] ?? 'log_only'), ['log_only', 'mail'], true) ? $_POST['notification_transport'] : 'log_only',
+            'subject_prefix' => trim((string) ($_POST['notification_subject_prefix'] ?? '')),
+            'recipients' => $this->normalizeRecipients($_POST['notification_recipients'] ?? ''),
+            'notify_statuses' => $this->normalizeStatuses($_POST['notification_statuses'] ?? []),
+            'include_spam' => isset($_POST['notification_include_spam']),
+            'include_admin_link' => isset($_POST['notification_include_admin_link']),
+        ];
+
+        return json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    }
+
+    private function normalizeRecipients(array|string $value): array
+    {
+        $items = is_array($value) ? $value : preg_split('/\r\n|\r|\n|,/', (string) $value);
+        $items = array_map(static fn ($item) => strtolower(trim((string) $item)), $items ?: []);
+        return array_values(array_filter($items, static fn ($item) => $item !== '' && filter_var($item, FILTER_VALIDATE_EMAIL)));
+    }
+
+    private function normalizeStatuses(array|string $value): array
+    {
+        $items = is_array($value) ? $value : preg_split('/\r\n|\r|\n|,/', (string) $value);
+        $items = array_map(static fn ($item) => strtolower(trim((string) $item)), $items ?: []);
+        $items = array_values(array_intersect($items, ['unread', 'read', 'spam', 'trash']));
+        return $items !== [] ? array_values(array_unique($items)) : ['unread'];
     }
 
     private function normalizeMappingJson(string $json, ?bool &$isValid = null): ?string
@@ -241,5 +285,18 @@ final class SiteController extends Controller
             'from_company' => ['company', 'company_name'],
             'phone' => ['mobile', 'tel'],
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
+
+    private function defaultNotificationSettings(): array
+    {
+        return [
+            'mode' => 'inherit',
+            'transport' => 'log_only',
+            'subject_prefix' => '',
+            'recipients' => [],
+            'notify_statuses' => ['unread'],
+            'include_spam' => false,
+            'include_admin_link' => true,
+        ];
     }
 }

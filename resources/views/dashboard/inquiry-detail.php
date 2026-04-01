@@ -93,6 +93,17 @@
     </div>
     <?php endif; ?>
 
+
+    <div class="detail-section mt-20">
+        <h2>Quick Copy</h2>
+        <div class="copy-actions-grid">
+            <button type="button" class="btn" data-copy-text="<?= e($copyBlocks['contact_summary']) ?>">Copy Contact Summary</button>
+            <button type="button" class="btn" data-copy-text="<?= e($copyBlocks['reply_draft']) ?>">Copy Reply Draft</button>
+            <button type="button" class="btn" data-copy-text="<?= e($copyBlocks['json_snapshot']) ?>">Copy JSON Snapshot</button>
+        </div>
+        <p class="muted mt-12">These buttons help sales quickly paste inquiry details into email, chat or CRM systems.</p>
+    </div>
+
     <div class="detail-grid mt-20">
         <?php if ($canUpdate): ?>
         <div class="detail-section">

@@ -82,6 +82,52 @@
     </div>
 </div>
 
+<div class="card mb-20">
+    <div class="card-header split-header">
+        <h2>Export Templates</h2>
+        <div class="muted">Save reusable filter + column presets</div>
+    </div>
+    <div class="card-body two-col-list gap-20">
+        <div>
+            <form method="post" action="<?= e(base_url('inquiries/export-template/create')) ?>" class="form-grid">
+                <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                <?php foreach ($filters as $key => $value): ?>
+                    <input type="hidden" name="<?= e($key) ?>" value="<?= e((string) $value) ?>">
+                <?php endforeach; ?>
+                <?php foreach ($selectedExportFields as $field): ?>
+                    <input type="hidden" name="export_fields[]" value="<?= e($field) ?>">
+                <?php endforeach; ?>
+                <label class="form-label"><span>Template Name</span><input type="text" name="template_name" class="form-input" placeholder="Unread AU sample leads"></label>
+                <label class="form-label"><span>Scope</span><select name="template_scope" class="form-input"><option value="personal">Personal</option><option value="shared">Shared</option></select></label>
+                <div class="filter-actions"><button type="submit" class="btn btn-primary">Save Current View as Template</button></div>
+            </form>
+        </div>
+        <div>
+            <?php if (empty($exportTemplates)): ?>
+                <p class="muted">No export templates saved yet.</p>
+            <?php else: ?>
+                <div class="simple-list compact-list">
+                    <?php foreach ($exportTemplates as $template): ?>
+                        <div class="simple-list-item compact-item">
+                            <div class="split-header"><div class="simple-list-title"><?= e($template['template_name']) ?></div><span class="<?= (int) $activeTemplateId === (int) $template['id'] ? 'badge-success' : 'badge-neutral' ?>"><?= (int) $activeTemplateId === (int) $template['id'] ? 'Applied' : e(ucfirst((string) $template['template_scope'])) ?></span></div>
+                            <div class="simple-list-meta"><?= e(($template['admin_nickname'] ?: $template['admin_username']) ?: 'System') ?> · <?= e((string) $template['created_at']) ?></div>
+                            <div class="inline-form mt-8">
+                                <a class="btn btn-sm" href="<?= e(base_url('inquiries?template_id=' . (int) $template['id'])) ?>">Use Template</a>
+                                <a class="btn btn-sm" href="<?= e(base_url('inquiries/export?template_id=' . (int) $template['id'])) ?>">Export</a>
+                                <form method="post" action="<?= e(base_url('inquiries/export-template/delete')) ?>" class="inline-form">
+                                    <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                                    <input type="hidden" name="template_id" value="<?= (int) $template['id'] ?>">
+                                    <button type="submit" class="btn btn-sm">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
 <form method="post" action="<?= e(base_url('inquiries/bulk')) ?>" class="card">
     <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
     <div class="card-header split-header">

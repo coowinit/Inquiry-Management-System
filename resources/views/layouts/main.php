@@ -20,6 +20,7 @@
             <a href="<?= e(base_url('dashboard')) ?>" class="nav-link <?= request_path() === '/dashboard' ? 'is-active' : '' ?>">Dashboard</a>
             <a href="<?= e(base_url('reports/stats')) ?>" class="nav-link <?= request_path() === '/reports/stats' ? 'is-active' : '' ?>">Reports & Analytics</a>
             <a href="<?= e(base_url('inquiries')) ?>" class="nav-link <?= request_path() === '/inquiries' || request_path() === '/inquiry' ? 'is-active' : '' ?>">Inquiry Management</a>
+            <a href="<?= e(base_url('followup-reminders')) ?>" class="nav-link <?= request_path() === '/followup-reminders' ? 'is-active' : '' ?>">Follow-up Reminders</a>
             <?php if (\App\Core\Auth::can('sites.view')): ?>
                 <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' || request_path() === '/sites/edit' ? 'is-active' : '' ?>">Sites & API</a>
             <?php endif; ?>

@@ -30,4 +30,24 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleAssignee();
         bulkActionSelect.addEventListener('change', toggleAssignee);
     }
+
+    const copyButtons = Array.from(document.querySelectorAll('[data-copy-text]'));
+    if (copyButtons.length > 0 && navigator.clipboard) {
+        copyButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const original = button.textContent;
+                navigator.clipboard.writeText(button.getAttribute('data-copy-text') || '').then(function () {
+                    button.textContent = 'Copied';
+                    window.setTimeout(function () {
+                        button.textContent = original;
+                    }, 1200);
+                }).catch(function () {
+                    button.textContent = 'Copy failed';
+                    window.setTimeout(function () {
+                        button.textContent = original;
+                    }, 1200);
+                });
+            });
+        });
+    }
 });

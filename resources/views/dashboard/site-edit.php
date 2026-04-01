@@ -46,6 +46,18 @@
             <textarea name="field_mapping_json" class="form-input" rows="10" placeholder="<?= e($mappingExample) ?>"><?= e((string) ($site['field_mapping_json'] ?? '')) ?></textarea>
         </label>
 
+        <div class="full-width soft-panel">
+            <div class="section-mini-title mb-12">Site Notification Override</div>
+            <div class="filter-grid">
+                <label class="form-label"><span>Mode</span><select name="notification_mode" class="form-input"><option value="inherit" <?= ($siteNotificationSettings['mode'] ?? 'inherit') === 'inherit' ? 'selected' : '' ?>>Inherit global settings</option><option value="disable" <?= ($siteNotificationSettings['mode'] ?? '') === 'disable' ? 'selected' : '' ?>>Disable for this site</option><option value="custom" <?= ($siteNotificationSettings['mode'] ?? '') === 'custom' ? 'selected' : '' ?>>Use site-specific settings</option></select></label>
+                <label class="form-label"><span>Transport</span><select name="notification_transport" class="form-input"><option value="log_only" <?= ($siteNotificationSettings['transport'] ?? 'log_only') === 'log_only' ? 'selected' : '' ?>>log_only</option><option value="mail" <?= ($siteNotificationSettings['transport'] ?? '') === 'mail' ? 'selected' : '' ?>>mail</option></select></label>
+                <label class="form-label"><span>Subject Prefix</span><input type="text" name="notification_subject_prefix" class="form-input" value="<?= e((string) ($siteNotificationSettings['subject_prefix'] ?? '')) ?>" placeholder="[IMS-A]"></label>
+                <label class="form-label full-width"><span>Recipients</span><textarea name="notification_recipients" class="form-input" rows="4" placeholder="sales@example.com\nteam@example.com"><?= e(implode("\n", $siteNotificationSettings['recipients'] ?? [])) ?></textarea></label>
+                <label class="form-label checkbox-label full-width"><span>Notify Statuses</span><div class="checkbox-grid"><?php foreach (['unread', 'read', 'spam', 'trash'] as $status): ?><label class="checkbox-row"><input type="checkbox" name="notification_statuses[]" value="<?= e($status) ?>" <?= in_array($status, $siteNotificationSettings['notify_statuses'] ?? ['unread'], true) ? 'checked' : '' ?>><span><?= e(ucfirst($status)) ?></span></label><?php endforeach; ?></div></label>
+                <label class="form-label checkbox-label full-width"><span>Advanced</span><div class="checkbox-grid"><label class="checkbox-row"><input type="checkbox" name="notification_include_spam" value="1" <?= !empty($siteNotificationSettings['include_spam']) ? 'checked' : '' ?>> Include spam notifications</label><label class="checkbox-row"><input type="checkbox" name="notification_include_admin_link" value="1" <?= !empty($siteNotificationSettings['include_admin_link']) ? 'checked' : '' ?>> Include backend detail link</label></div></label>
+            </div>
+        </div>
+
         <label class="form-label full-width">
             <span>Notes</span>
             <textarea name="notes" class="form-input" rows="5"><?= e($site['notes'] ?? '') ?></textarea>

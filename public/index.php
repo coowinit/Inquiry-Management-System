@@ -42,7 +42,10 @@ $router->post('/inquiry/followup', [InquiryController::class, 'addFollowup'], tr
 $router->post('/inquiry/followup/update', [InquiryController::class, 'updateFollowup'], true);
 $router->post('/inquiry/followup/toggle', [InquiryController::class, 'toggleFollowup'], true);
 $router->post('/inquiries/bulk', [InquiryController::class, 'bulkUpdate'], true);
+$router->post('/inquiries/export-template/create', [InquiryController::class, 'saveExportTemplate'], true);
+$router->post('/inquiries/export-template/delete', [InquiryController::class, 'deleteExportTemplate'], true);
 $router->get('/inquiries/export', [InquiryController::class, 'exportCsv'], true);
+$router->get('/followup-reminders', [InquiryController::class, 'reminders'], true);
 
 $router->get('/sites', [SiteController::class, 'index'], true);
 $router->post('/sites/create', [SiteController::class, 'create'], true);
@@ -57,6 +60,7 @@ $router->post('/admins/update-meta', [AdminController::class, 'updateMeta'], tru
 
 $router->get('/logs', [LogController::class, 'index'], true);
 $router->get('/api-logs', [ApiLogController::class, 'index'], true);
+$router->get('/api-log', [ApiLogController::class, 'show'], true);
 
 $router->get('/tools/blacklist-ips', [ToolsController::class, 'blacklistIps'], true);
 $router->post('/tools/blacklist-ips', [ToolsController::class, 'addBlacklistIp'], true);

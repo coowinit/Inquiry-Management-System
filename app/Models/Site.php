@@ -49,9 +49,9 @@ final class Site
     public function create(array $data): bool
     {
         $sql = 'INSERT INTO inquiry_sites (
-                    site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json
+                    site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json, notification_settings_json
                 ) VALUES (
-                    :site_name, :site_domain, :site_key, :api_token, :signature_secret, :require_signature, :status, :notes, :field_mapping_json
+                    :site_name, :site_domain, :site_key, :api_token, :signature_secret, :require_signature, :status, :notes, :field_mapping_json, :notification_settings_json
                 )';
 
         try {
@@ -72,6 +72,7 @@ final class Site
                     status = :status,
                     notes = :notes,
                     field_mapping_json = :field_mapping_json,
+                    notification_settings_json = :notification_settings_json,
                     updated_at = NOW()
                 WHERE id = :id';
 
@@ -85,6 +86,7 @@ final class Site
                 'status' => $data['status'],
                 'notes' => $data['notes'],
                 'field_mapping_json' => $data['field_mapping_json'],
+                'notification_settings_json' => $data['notification_settings_json'],
                 'id' => $id,
             ]);
         } catch (PDOException) {
@@ -130,5 +132,40 @@ final class Site
     {
         $mapping = json_decode((string) ($site['field_mapping_json'] ?? ''), true);
         return is_array($mapping) ? $mapping : [];
+    }
+
+    public function notificationSettings(array $site): array
+    {
+        $settings = json_decode((string) ($site['notification_settings_json'] ?? ''), true);
+        if (!is_array($settings)) {
+            $settings = [];
+        }
+
+        $mode = in_array(($settings['mode'] ?? 'inherit'), ['inherit', 'disable', 'custom'], true) ? $settings['mode'] : 'inherit';
+        $transport = in_array(($settings['transport'] ?? 'log_only'), ['log_only', 'mail'], true) ? $settings['transport'] : 'log_only';
+        $recipients = $settings['recipients'] ?? [];
+        if (!is_array($recipients)) {
+            $recipients = preg_split('/\r\n|\r|\n|,/', (string) $recipients);
+        }
+        $recipients = array_values(array_filter(array_map(static fn ($item) => strtolower(trim((string) $item)), $recipients), static fn ($item) => $item !== ''));
+
+        $statuses = $settings['notify_statuses'] ?? ['unread'];
+        if (!is_array($statuses)) {
+            $statuses = preg_split('/\r\n|\r|\n|,/', (string) $statuses);
+        }
+        $statuses = array_values(array_intersect(array_map(static fn ($item) => strtolower(trim((string) $item)), $statuses), ['unread', 'read', 'spam', 'trash']));
+        if ($statuses === []) {
+            $statuses = ['unread'];
+        }
+
+        return [
+            'mode' => $mode,
+            'transport' => $transport,
+            'subject_prefix' => trim((string) ($settings['subject_prefix'] ?? '')),
+            'recipients' => $recipients,
+            'notify_statuses' => $statuses,
+            'include_spam' => !empty($settings['include_spam']),
+            'include_admin_link' => array_key_exists('include_admin_link', $settings) ? !empty($settings['include_admin_link']) : true,
+        ];
     }
 }

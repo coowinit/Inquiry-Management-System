@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\InquiryLog;
+use App\Models\Site;
 use App\Models\SystemSetting;
 
 final class EmailNotificationService
@@ -25,15 +26,36 @@ final class EmailNotificationService
             'include_admin_link' => true,
         ]);
 
-        $settings['enabled'] = !empty($settings['enabled']);
-        $settings['transport'] = in_array(($settings['transport'] ?? 'log_only'), ['log_only', 'mail'], true) ? $settings['transport'] : 'log_only';
-        $settings['from_email'] = trim((string) ($settings['from_email'] ?? 'no-reply@example.com')) ?: 'no-reply@example.com';
-        $settings['from_name'] = trim((string) ($settings['from_name'] ?? 'Inquiry Management System')) ?: 'Inquiry Management System';
-        $settings['subject_prefix'] = trim((string) ($settings['subject_prefix'] ?? '[IMS]')) ?: '[IMS]';
-        $settings['recipients'] = $this->normalizeEmailList($settings['recipients'] ?? []);
-        $settings['notify_statuses'] = $this->normalizeStatusList($settings['notify_statuses'] ?? ['unread']);
+        return $this->normalizeGlobalSettings($settings);
+    }
 
-        return $settings;
+    public function getEffectiveSettingsForSite(array $site): array
+    {
+        $global = $this->getSettings();
+        $siteSettings = (new Site())->notificationSettings($site);
+        $mode = $siteSettings['mode'] ?? 'inherit';
+
+        if ($mode === 'disable') {
+            $global['enabled'] = false;
+            $global['_site_mode'] = 'disable';
+            return $global;
+        }
+
+        if ($mode === 'custom') {
+            $effective = $global;
+            $effective['enabled'] = true;
+            $effective['transport'] = in_array(($siteSettings['transport'] ?? 'log_only'), ['log_only', 'mail'], true) ? $siteSettings['transport'] : $global['transport'];
+            $effective['subject_prefix'] = trim((string) ($siteSettings['subject_prefix'] ?? '')) ?: $global['subject_prefix'];
+            $effective['recipients'] = $this->normalizeEmailList($siteSettings['recipients'] ?? []);
+            $effective['notify_statuses'] = $this->normalizeStatusList($siteSettings['notify_statuses'] ?? $global['notify_statuses']);
+            $effective['include_spam'] = !empty($siteSettings['include_spam']);
+            $effective['include_admin_link'] = array_key_exists('include_admin_link', $siteSettings) ? !empty($siteSettings['include_admin_link']) : $global['include_admin_link'];
+            $effective['_site_mode'] = 'custom';
+            return $effective;
+        }
+
+        $global['_site_mode'] = 'inherit';
+        return $global;
     }
 
     public function saveFromPost(array $post): bool
@@ -55,7 +77,7 @@ final class EmailNotificationService
 
     public function notify(array $inquiry, array $site): bool
     {
-        $settings = $this->getSettings();
+        $settings = $this->getEffectiveSettingsForSite($site);
 
         if (empty($settings['enabled'])) {
             return false;
@@ -79,9 +101,10 @@ final class EmailNotificationService
         $body = $this->buildBody($inquiry, $site, $settings);
 
         $log = new InquiryLog();
+        $mode = $settings['_site_mode'] ?? 'inherit';
 
         if ($settings['transport'] === 'log_only') {
-            $log->create((int) ($inquiry['id'] ?? 0), null, 'notification_logged', 'Notification prepared for: ' . implode(', ', $recipients));
+            $log->create((int) ($inquiry['id'] ?? 0), null, 'notification_logged', 'Notification prepared for: ' . implode(', ', $recipients) . ' [site mode: ' . $mode . ']');
             return true;
         }
 
@@ -96,20 +119,20 @@ final class EmailNotificationService
             (int) ($inquiry['id'] ?? 0),
             null,
             $sent ? 'notification_sent' : 'notification_failed',
-            ($sent ? 'Notification sent to: ' : 'Notification failed for: ') . implode(', ', $recipients)
+            ($sent ? 'Notification sent to: ' : 'Notification failed for: ') . implode(', ', $recipients) . ' [site mode: ' . $mode . ']'
         );
 
         return $sent;
     }
 
-    public function sendTest(array $admin = []): bool
+    public function sendTest(array $admin = [], ?array $site = null): bool
     {
-        $settings = $this->getSettings();
+        $settings = $site ? $this->getEffectiveSettingsForSite($site) : $this->getSettings();
         if (empty($settings['enabled']) || empty($settings['recipients'])) {
             return false;
         }
 
-        $site = ['site_name' => 'Manual Test', 'site_domain' => base_url()];
+        $site = $site ?: ['site_name' => 'Manual Test', 'site_domain' => base_url()];
         $inquiry = [
             'id' => 0,
             'status' => in_array('unread', $settings['notify_statuses'], true) ? 'unread' : ($settings['notify_statuses'][0] ?? 'unread'),
@@ -158,6 +181,20 @@ final class EmailNotificationService
         }
 
         return implode("\n", $lines);
+    }
+
+    private function normalizeGlobalSettings(array $settings): array
+    {
+        $settings['enabled'] = !empty($settings['enabled']);
+        $settings['transport'] = in_array(($settings['transport'] ?? 'log_only'), ['log_only', 'mail'], true) ? $settings['transport'] : 'log_only';
+        $settings['from_email'] = trim((string) ($settings['from_email'] ?? 'no-reply@example.com')) ?: 'no-reply@example.com';
+        $settings['from_name'] = trim((string) ($settings['from_name'] ?? 'Inquiry Management System')) ?: 'Inquiry Management System';
+        $settings['subject_prefix'] = trim((string) ($settings['subject_prefix'] ?? '[IMS]')) ?: '[IMS]';
+        $settings['recipients'] = $this->normalizeEmailList($settings['recipients'] ?? []);
+        $settings['notify_statuses'] = $this->normalizeStatusList($settings['notify_statuses'] ?? ['unread']);
+        $settings['include_spam'] = !empty($settings['include_spam']);
+        $settings['include_admin_link'] = array_key_exists('include_admin_link', $settings) ? !empty($settings['include_admin_link']) : true;
+        return $settings;
     }
 
     private function normalizeEmailList(array|string $value): array
