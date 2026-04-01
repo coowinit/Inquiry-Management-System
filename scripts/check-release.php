@@ -187,7 +187,7 @@ function sql_string_literals(string $file): array
 function check_sql_files(string $root, array &$errors, array &$warnings, array &$notes): void
 {
     $dbDir = $root . '/database';
-    $required = ['schema.sql', 'seed.sql', 'upgrade-v0.3.0.sql', 'upgrade-v0.4.0.sql', 'upgrade-v0.5.0.sql', 'upgrade-v0.6.0.sql', 'upgrade-v0.7.0.sql', 'upgrade-v0.8.0.sql', 'upgrade-v0.8.1.sql'];
+    $required = ['schema.sql', 'seed.sql', 'upgrade-v0.3.0.sql', 'upgrade-v0.4.0.sql', 'upgrade-v0.5.0.sql', 'upgrade-v0.6.0.sql', 'upgrade-v0.7.0.sql', 'upgrade-v0.8.0.sql', 'upgrade-v0.8.1.sql', 'upgrade-v0.8.2.sql'];
     foreach ($required as $file) {
         if (!file_exists($dbDir . '/' . $file)) {
             add_error($errors, 'Missing database file: database/' . $file);
@@ -254,9 +254,10 @@ foreach (['RELEASE-CHECKLIST.md', 'MANUAL-TEST-CHECKLIST.md', 'API-TEST-EXAMPLES
     }
 }
 
+$version = trim((string) @file_get_contents($root . '/VERSION.txt'));
 $lines = [
     'Inquiry Management System release check',
-    'Version target: v0.8.1',
+    'Version target: ' . ($version !== '' ? $version : 'unknown'),
     'Project root: ' . $root,
     str_repeat('=', 48),
     'Errors: ' . count($errors),

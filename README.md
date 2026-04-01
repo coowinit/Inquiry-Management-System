@@ -1,17 +1,15 @@
 # Inquiry Management System
 
-Version: v0.8.1
+Version: v0.8.2
 
-This release is the **stable baseline** after the earlier hotfixes and the feature work completed through v0.8.0.
+This release is the **UI polish baseline** after the stable packaging work in v0.8.1, focused on making the two core working screens easier to scan and use daily.
 
-## What is new in v0.8.1
-- consolidates earlier hotfixes into the main package
-- keeps `InquiryFollowup.php` in the package
-- keeps `Admin::allBrief()` in the admin model
-- keeps the corrected SQL quoting in `app/Models/Admin.php`
-- adds a release integrity checker: `php scripts/check-release.php`
-- adds release, manual test, API test, and known-issues documents
-- adds a no-op upgrade file for the stable baseline release
+## What is new in v0.8.2
+- refreshes `Inquiry Management` with a denser Bootstrap-based layout
+- refreshes `Inquiry Detail` with a stronger summary header and clearer two-column hierarchy
+- keeps the v0.8.1 release integrity checker and stability documents
+- folds the inquiry list status-form fix and the follow-up reminder SQL fix into the packaged release
+- adds a no-op upgrade file for the UI refresh release
 
 ## Quick start
 1. Import `database/schema.sql`
@@ -25,8 +23,8 @@ This release is the **stable baseline** after the earlier hotfixes and the featu
 - `database/schema.sql`
 - `database/seed.sql`
 
-### Upgrade from v0.8.0
-- Run `database/upgrade-v0.8.1.sql`
+### Upgrade from v0.8.1
+- Run `database/upgrade-v0.8.2.sql`
 - No schema changes are required in this release
 
 ## Release quality files
@@ -34,7 +32,7 @@ This release is the **stable baseline** after the earlier hotfixes and the featu
 - `MANUAL-TEST-CHECKLIST.md`
 - `API-TEST-EXAMPLES.md`
 - `KNOWN-ISSUES.md`
-- `RELEASE-REPORT-v0.8.1.txt`
+- `RELEASE-REPORT-v0.8.2.txt`
 - `scripts/check-release.php`
 - `scripts/check-release.sh`
 - `scripts/check-release.bat`

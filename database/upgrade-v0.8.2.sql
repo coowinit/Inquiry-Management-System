@@ -1,0 +1,3 @@
+-- v0.8.2
+-- No schema changes.
+-- UI refresh release for Inquiry Management and Inquiry Detail pages.

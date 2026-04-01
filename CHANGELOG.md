@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.2
+- refreshed Inquiry Management with a denser Bootstrap-based filter, template, and table layout
+- refreshed Inquiry Detail with a clearer summary header, stronger content hierarchy, and a two-column working view
+- included Bootstrap v5 base assets in the shared layout while retaining the existing PHP backend structure
+- folded the earlier inquiry list and follow-up page fixes into the packaged codebase
+- added `database/upgrade-v0.8.2.sql` as a no-op upgrade marker for the UI refresh release
+
 ## v0.8.1
 - consolidated prior hotfixes into the main stable package
 - retained `InquiryFollowup.php` in the packaged release

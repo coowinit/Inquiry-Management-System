@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= e(($pageTitle ?? 'System') . ' - ' . config('app.name')) ?></title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
-<body>
+<body class="app-body">
 <?php $authUser = \App\Core\Auth::user(); ?>
 <div class="app-shell">
     <aside class="sidebar">
@@ -18,11 +20,11 @@
         <nav class="sidebar-nav">
             <div class="nav-group-title">Main</div>
             <a href="<?= e(base_url('dashboard')) ?>" class="nav-link <?= request_path() === '/dashboard' ? 'is-active' : '' ?>">Dashboard</a>
-            <a href="<?= e(base_url('reports/stats')) ?>" class="nav-link <?= request_path() === '/reports/stats' ? 'is-active' : '' ?>">Reports & Analytics</a>
+            <a href="<?= e(base_url('reports/stats')) ?>" class="nav-link <?= request_path() === '/reports/stats' ? 'is-active' : '' ?>">Reports &amp; Analytics</a>
             <a href="<?= e(base_url('inquiries')) ?>" class="nav-link <?= request_path() === '/inquiries' || request_path() === '/inquiry' ? 'is-active' : '' ?>">Inquiry Management</a>
             <a href="<?= e(base_url('followup-reminders')) ?>" class="nav-link <?= request_path() === '/followup-reminders' ? 'is-active' : '' ?>">Follow-up Reminders</a>
             <?php if (\App\Core\Auth::can('sites.view')): ?>
-                <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' || request_path() === '/sites/edit' ? 'is-active' : '' ?>">Sites & API</a>
+                <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' || request_path() === '/sites/edit' ? 'is-active' : '' ?>">Sites &amp; API</a>
             <?php endif; ?>
             <?php if (\App\Core\Auth::can('tools.view')): ?>
                 <a href="<?= e(base_url('admins')) ?>" class="nav-link <?= request_path() === '/admins' ? 'is-active' : '' ?>">Admin Users</a>
@@ -52,6 +54,7 @@
         <header class="topbar">
             <div>
                 <h1 class="page-title"><?= e($pageTitle ?? '') ?></h1>
+                <p class="page-subtitle mb-0">Clean Bootstrap-based admin layout with a denser, easier-to-scan workflow.</p>
             </div>
             <div class="topbar-user">
                 <span><?= e(($authUser['nickname'] ?? $authUser['username'] ?? 'Admin') . ' · ' . strtoupper((string) ($authUser['role'] ?? 'admin'))) ?></span>
@@ -69,6 +72,7 @@
         <?= $content ?>
     </main>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="<?= e(asset('js/app.js')) ?>"></script>
 </body>
 </html>
