@@ -1,22 +1,44 @@
 # Inquiry Management System
 
-Version: v0.8.0
+Version: v0.8.1
 
-This release adds API log detail pages, site-level notification overrides, export templates, follow-up reminders, and quick copy tools.
+This release is the **stable baseline** after the earlier hotfixes and the feature work completed through v0.8.0.
 
-## Upgrade from v0.6.x
-Run `database/upgrade-v0.7.0.sql` and then replace project files.
+## What is new in v0.8.1
+- consolidates earlier hotfixes into the main package
+- keeps `InquiryFollowup.php` in the package
+- keeps `Admin::allBrief()` in the admin model
+- keeps the corrected SQL quoting in `app/Models/Admin.php`
+- adds a release integrity checker: `php scripts/check-release.php`
+- adds release, manual test, API test, and known-issues documents
+- adds a no-op upgrade file for the stable baseline release
 
-## v0.8.0 highlights
-- API request logs now support a detail view with copied JSON blocks.
-- Each site can inherit, disable or override email notification delivery.
-- Inquiry export templates can be saved and reused.
-- Follow-up reminders now have a dedicated queue page.
-- Inquiry detail includes quick-copy buttons for contact summary, reply draft and JSON snapshot.
+## Quick start
+1. Import `database/schema.sql`
+2. Import `database/seed.sql`
+3. Update `config/database.php`
+4. Point the web root to `public/`
+5. Run `php scripts/check-release.php` before packaging or deploying
 
-## Upgrade from v0.7.x
-Run:
+## Upgrade
+### Fresh install
+- `database/schema.sql`
+- `database/seed.sql`
 
-```sql
-source database/upgrade-v0.8.0.sql;
-```
+### Upgrade from v0.8.0
+- Run `database/upgrade-v0.8.1.sql`
+- No schema changes are required in this release
+
+## Release quality files
+- `RELEASE-CHECKLIST.md`
+- `MANUAL-TEST-CHECKLIST.md`
+- `API-TEST-EXAMPLES.md`
+- `KNOWN-ISSUES.md`
+- `RELEASE-REPORT-v0.8.1.txt`
+- `scripts/check-release.php`
+- `scripts/check-release.sh`
+- `scripts/check-release.bat`
+
+## Default admin
+- Username: `admin`
+- Password: `Admin@123456`

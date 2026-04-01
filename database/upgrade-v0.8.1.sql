@@ -1,0 +1,4 @@
+-- Inquiry Management System v0.8.1
+-- Stable baseline release.
+-- No schema changes in this version.
+-- Purpose: consolidate hotfixes, add release checks, and document regression testing.
