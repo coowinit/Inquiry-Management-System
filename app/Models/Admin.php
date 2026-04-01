@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Core\Database;
 
-
 final class Admin
 {
     public function findByUsername(string $username): array|false
@@ -23,6 +22,17 @@ final class Admin
         $stmt = Database::connection()->prepare($sql);
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
+    }
+
+    /**
+     * Return a lightweight admin list for dropdowns, assignment and filters.
+     */
+    public function allBrief(): array
+    {
+        $sql = 'SELECT id, username, nickname, email FROM admins ORDER BY COALESCE(NULLIF(nickname, \'\'), username) ASC, id ASC';
+        $stmt = Database::connection()->query($sql);
+        $rows = $stmt->fetchAll();
+        return is_array($rows) ? $rows : [];
     }
 
     public function updateProfile(int $id, array $data): bool
