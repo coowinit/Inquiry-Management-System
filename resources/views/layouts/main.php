@@ -54,7 +54,9 @@
         <header class="topbar">
             <div>
                 <h1 class="page-title"><?= e($pageTitle ?? '') ?></h1>
-                <p class="page-subtitle mb-0">Clean Bootstrap-based admin layout with a denser, easier-to-scan workflow.</p>
+                <?php if (!empty($pageSubtitle ?? '')): ?>
+                    <p class="page-subtitle mb-0"><?= e((string) $pageSubtitle) ?></p>
+                <?php endif; ?>
             </div>
             <div class="topbar-user">
                 <span><?= e(($authUser['nickname'] ?? $authUser['username'] ?? 'Admin') . ' · ' . strtoupper((string) ($authUser['role'] ?? 'admin'))) ?></span>

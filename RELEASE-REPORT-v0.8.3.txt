@@ -1,0 +1,16 @@
+Inquiry Management System release check
+Version target: v0.8.3
+Project root: /mnt/data/inquiry-system-v0.8.3
+================================================
+Errors: 0
+Warnings: 0
+Notes: 6
+
+[NOTES]
+- PHP syntax lint checked 37 file(s).
+- App\ use statements checked: 78.
+- Routes checked: 46.
+- Controller view references checked: 20.
+- Schema tables detected: 10.
+- SQL table references checked: 10.
+

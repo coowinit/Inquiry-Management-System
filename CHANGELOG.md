@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.8.3
+- rebuilt Inquiry Management into a tighter admin-style list page with a clearer stats strip, compact filters, lighter export area, and cleaner row actions
+- rebuilt Inquiry Detail into a true two-column working page with a stronger summary header, clearer card hierarchy, follow-up timeline styling, and weaker system-data sections
+- removed the generic top-page subtitle so the shared layout no longer adds unrelated helper text to every screen
+- retained the same business logic and routes while focusing this release on UI structure, readability, and day-to-day workflow comfort
+- added `database/upgrade-v0.8.3.sql` as a no-op upgrade marker for the inquiry page UI refactor
+
 ## v0.8.2
 - refreshed Inquiry Management with a denser Bootstrap-based filter, template, and table layout
 - refreshed Inquiry Detail with a clearer summary header, stronger content hierarchy, and a two-column working view
