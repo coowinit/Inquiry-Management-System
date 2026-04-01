@@ -65,7 +65,7 @@ $remainingLogs = max(0, count($logs ?? []) - count($logPreview));
     </div>
 </section>
 
-<div class="ims-detail-layout ims-detail-layout-polished">
+<div class="ims-detail-layout ims-detail-layout-polished mt-4">
     <div class="ims-detail-primary">
         <section class="card ims-card ims-card-compact">
             <div class="card-header">
