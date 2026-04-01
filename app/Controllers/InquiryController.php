@@ -24,6 +24,8 @@ final class InquiryController extends Controller
         $inquiryModel = new Inquiry();
         $siteModel = new Site();
         $pagination = $inquiryModel->paginate($filters, $page, $perPage);
+        $allowedExportFields = $inquiryModel->allowedExportColumns();
+        $selectedExportFields = $this->collectExportFields(array_keys($allowedExportFields));
 
         $this->view('dashboard/inquiries', [
             'pageTitle' => 'Inquiry Management',
@@ -31,6 +33,8 @@ final class InquiryController extends Controller
             'filters' => $filters,
             'sites' => $siteModel->all(),
             'csrfToken' => Csrf::token(),
+            'allowedExportFields' => $allowedExportFields,
+            'selectedExportFields' => $selectedExportFields,
         ]);
     }
 
@@ -134,18 +138,16 @@ final class InquiryController extends Controller
     public function exportCsv(): void
     {
         $filters = $this->collectFilters();
-        $rows = (new Inquiry())->exportRows($filters, 5000);
+        $inquiryModel = new Inquiry();
+        $allowedColumns = array_keys($inquiryModel->allowedExportColumns());
+        $selectedFields = $this->collectExportFields($allowedColumns);
+        $rows = $inquiryModel->exportRows($filters, $selectedFields, 5000);
 
-        (new InquiryLog())->create(null, Auth::id(), 'inquiries_exported', 'Exported ' . count($rows) . ' rows as CSV');
+        (new InquiryLog())->create(null, Auth::id(), 'inquiries_exported', 'Exported ' . count($rows) . ' rows as CSV with fields: ' . implode(', ', $selectedFields));
 
         send_csv_download(
             'inquiries-' . date('Ymd-His') . '.csv',
-            [
-                'id', 'site_name', 'form_key', 'status', 'name', 'email', 'title', 'content',
-                'country', 'phone', 'address', 'from_company', 'source_url', 'referer_url',
-                'ip', 'browser', 'device_type', 'language', 'admin_note', 'submitted_at',
-                'created_at', 'updated_at', 'extra_data',
-            ],
+            $selectedFields,
             $rows
         );
     }
@@ -166,5 +168,14 @@ final class InquiryController extends Controller
         }
 
         return $filters;
+    }
+
+    private function collectExportFields(array $allowed): array
+    {
+        $fields = $_GET['fields'] ?? [];
+        $fields = is_array($fields) ? array_map('strval', $fields) : [];
+        $fields = array_values(array_intersect($fields, $allowed));
+
+        return $fields !== [] ? $fields : $allowed;
     }
 }

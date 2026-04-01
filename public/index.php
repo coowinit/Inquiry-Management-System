@@ -47,8 +47,13 @@ $router->get('/logs', [LogController::class, 'index'], true);
 $router->get('/tools/blacklist-ips', [ToolsController::class, 'blacklistIps'], true);
 $router->post('/tools/blacklist-ips', [ToolsController::class, 'addBlacklistIp'], true);
 $router->post('/tools/blacklist-ips/delete', [ToolsController::class, 'deleteBlacklistIp'], true);
+$router->get('/tools/blacklist-emails', [ToolsController::class, 'blacklistEmails'], true);
+$router->post('/tools/blacklist-emails', [ToolsController::class, 'addBlacklistEmail'], true);
+$router->post('/tools/blacklist-emails/delete', [ToolsController::class, 'deleteBlacklistEmail'], true);
 $router->get('/tools/spam-rules', [ToolsController::class, 'spamRules'], true);
 $router->post('/tools/spam-rules', [ToolsController::class, 'updateSpamRules'], true);
+$router->get('/tools/email-notifications', [ToolsController::class, 'emailNotifications'], true);
+$router->post('/tools/email-notifications', [ToolsController::class, 'updateEmailNotifications'], true);
 
 $router->get('/profile', [SettingsController::class, 'profile'], true);
 $router->post('/profile', [SettingsController::class, 'updateProfile'], true);

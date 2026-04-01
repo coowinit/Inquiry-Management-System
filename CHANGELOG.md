@@ -1,50 +1,32 @@
 # Changelog
 
+## v0.5.0
+
+- added blocked email and blocked domain management
+- added email notification center with `log_only` and `mail` modes
+- added dashboard 7-day trend, top forms and country summary widgets
+- added export field selection for inquiry CSV export
+- enhanced API receive flow with blocked email/domain checks
+- added `blacklist_emails` table and `email_notifications` system setting
+- logged notification delivery attempts into system logs
+
 ## v0.4.0
 
-- Added site-level Field Mapping JSON
-- Added admin note editing in inquiry detail page
-- Added inquiry list filter for inquiries with or without notes
-- Added Spam Rule Center page in backend
-- Added configurable rules for honeypot, links, duplicates, rate limits, keywords, and disposable email domains
-- Added `system_settings` model and spam rule service
-- Added database upgrade script for v0.4.0
-- Updated receive API to apply field mapping before validation
-- Updated receive API to include mapped payload in `extra_data` when mappings are used
+- added site field mapping JSON support
+- added admin note editing in inquiry detail page
+- added spam rule center page and settings persistence
 
 ## v0.3.0
 
-- Added site create and edit functions
-- Added API token rotation
-- Added signature secret rotation
-- Added optional HMAC signature verification per site
-- Added system logs page
-- Added CSV export from inquiry list
-- Added blocked IP delete action
-- Updated dashboard with v0.3.0 summary and recent logs
-- Added database upgrade script for v0.3.0
-- Added signed PHP forwarder example
+- added site create and edit management
+- added HMAC signature verification support
+- added CSV export and system logs page
 
 ## v0.2.0
 
-- Added unified receive API endpoint
-- Added API health check endpoint
-- Added `site_key + api_token` validation
-- Added required field validation for `name`, `email`, `content`
-- Added blocked IP check before insert
-- Added basic spam checks for honeypot, duplicate content, link count, IP/email rate limit
-- Added storage for `extra_data` and `raw_payload`
-- Added inquiry filters in the backend
-- Added quick status update actions
-- Added blocked IP add form in the backend
-- Added API quick start info in dashboard and sites page
-- Added GitHub Actions build-release workflow
-- Added PHP and JavaScript integration examples
+- added unified inquiry receive API
+- added base spam detection and payload storage
 
 ## v0.1.0
 
-- Initial scaffold version
-- Added login/logout
-- Added dashboard, inquiries, detail, sites, blocked IPs, profile pages
-- Added schema and seed files
-- Added basic project structure and UI
+- initial scaffold with login, dashboard and basic inquiry pages

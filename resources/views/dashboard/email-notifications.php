@@ -1,0 +1,82 @@
+<div class="card mb-20">
+    <div class="card-header split-header">
+        <h2>Email Notifications</h2>
+        <div class="muted">Use log_only for safe local testing</div>
+    </div>
+    <div class="card-body">
+        <form method="post" action="<?= e(base_url('tools/email-notifications')) ?>" class="form-grid profile-form">
+            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+
+            <label class="form-label checkbox-label full-width">
+                <span>Status</span>
+                <label class="checkbox-row"><input type="checkbox" name="enabled" value="1" <?= !empty($settings['enabled']) ? 'checked' : '' ?>> Enable notification delivery</label>
+            </label>
+
+            <label class="form-label">
+                <span>Transport</span>
+                <select name="transport" class="form-input">
+                    <option value="log_only" <?= ($settings['transport'] ?? 'log_only') === 'log_only' ? 'selected' : '' ?>>log_only</option>
+                    <option value="mail" <?= ($settings['transport'] ?? '') === 'mail' ? 'selected' : '' ?>>mail</option>
+                </select>
+            </label>
+
+            <label class="form-label">
+                <span>Subject Prefix</span>
+                <input type="text" name="subject_prefix" class="form-input" value="<?= e((string) ($settings['subject_prefix'] ?? '[IMS]')) ?>">
+            </label>
+
+            <label class="form-label">
+                <span>From Email</span>
+                <input type="email" name="from_email" class="form-input" value="<?= e((string) ($settings['from_email'] ?? '')) ?>">
+            </label>
+
+            <label class="form-label">
+                <span>From Name</span>
+                <input type="text" name="from_name" class="form-input" value="<?= e((string) ($settings['from_name'] ?? '')) ?>">
+            </label>
+
+            <label class="form-label full-width">
+                <span>Recipients</span>
+                <textarea name="recipients" class="form-input" rows="5" placeholder="sales@example.com\nteam@example.com"><?= e(implode("\n", $settings['recipients'] ?? [])) ?></textarea>
+            </label>
+
+            <label class="form-label checkbox-label full-width">
+                <span>Notify Statuses</span>
+                <div class="checkbox-grid">
+                    <?php foreach (['unread', 'read', 'spam', 'trash'] as $status): ?>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="notify_statuses[]" value="<?= e($status) ?>" <?= in_array($status, $settings['notify_statuses'] ?? [], true) ? 'checked' : '' ?>>
+                            <span><?= e(ucfirst($status)) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            </label>
+
+            <label class="form-label checkbox-label full-width">
+                <span>Advanced</span>
+                <div class="checkbox-grid">
+                    <label class="checkbox-row"><input type="checkbox" name="include_spam" value="1" <?= !empty($settings['include_spam']) ? 'checked' : '' ?>> Include spam notifications</label>
+                    <label class="checkbox-row"><input type="checkbox" name="include_admin_link" value="1" <?= !empty($settings['include_admin_link']) ? 'checked' : '' ?>> Include backend detail link</label>
+                </div>
+            </label>
+
+            <div class="full-width">
+                <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h2>How It Works</h2>
+    </div>
+    <div class="card-body">
+        <ul class="plain-list">
+            <li><strong>log_only</strong> writes delivery events into System Logs without sending external email.</li>
+            <li><strong>mail</strong> uses native PHP <code>mail()</code>, so your hosting server must already support outbound mail.</li>
+            <li>Notifications trigger right after the API saves a new inquiry.</li>
+            <li>Blocked IPs, blocked emails and blocked domains are checked before notification logic runs.</li>
+        </ul>
+    </div>
+</div>

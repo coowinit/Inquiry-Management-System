@@ -51,7 +51,21 @@
             <div class="filter-actions full-width">
                 <button type="submit" class="btn btn-primary">Apply Filters</button>
                 <a href="<?= e(base_url('inquiries')) ?>" class="btn">Reset</a>
-                <a href="<?= e(url_with_query('inquiries/export')) ?>" class="btn">Export CSV</a>
+            </div>
+
+            <div class="full-width export-box">
+                <div class="split-header mb-12">
+                    <h3 class="section-mini-title">CSV Export Fields</h3>
+                    <a href="<?= e(url_with_query('inquiries/export')) ?>" class="btn">Export CSV</a>
+                </div>
+                <div class="checkbox-grid">
+                    <?php foreach ($allowedExportFields as $fieldKey => $expression): ?>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="fields[]" value="<?= e($fieldKey) ?>" <?= in_array($fieldKey, $selectedExportFields, true) ? 'checked' : '' ?>>
+                            <span><?= e($fieldKey) ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </form>
     </div>
@@ -91,21 +105,29 @@
                             <td>
                                 <div class="table-title"><?= e($item['name']) ?></div>
                                 <div class="table-sub"><?= e($item['email']) ?></div>
-                                <?php if (!empty($item['from_company'])): ?><div class="table-sub"><?= e($item['from_company']) ?></div><?php endif; ?>
+                                <?php if (!empty($item['phone'])): ?><div class="table-sub"><?= e($item['phone']) ?></div><?php endif; ?>
                             </td>
                             <td>
-                                <div class="table-title"><?= e($item['site_name'] ?: '-') ?></div>
+                                <div class="table-title"><?= e($item['site_name'] ?: 'Unknown site') ?></div>
                                 <div class="table-sub"><?= e($item['form_key'] ?: '-') ?></div>
                             </td>
                             <td>
                                 <div class="table-sub"><?= e($item['ip'] ?: '-') ?></div>
                                 <div class="table-sub"><?= e($item['browser'] ?: '-') ?></div>
                             </td>
-                            <td><?= !empty($item['admin_note']) ? 'Yes' : '-' ?></td>
-                            <td><span class="status-pill status-<?= e($item['status']) ?>"><?= e(ucfirst((string) $item['status'])) ?></span></td>
-                            <td><?= e((string) $item['created_at']) ?></td>
                             <td>
-                                <div class="action-stack">
+                                <?php if (!empty($item['admin_note'])): ?>
+                                    <span class="badge-success">Has note</span>
+                                <?php else: ?>
+                                    <span class="badge-neutral">No note</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><span class="status-badge status-<?= e($item['status']) ?>"><?= e(ucfirst((string) $item['status'])) ?></span></td>
+                            <td>
+                                <div class="table-sub"><?= e((string) $item['created_at']) ?></div>
+                            </td>
+                            <td>
+                                <div class="inline-form">
                                     <a href="<?= e(base_url('inquiry?id=' . (int) $item['id'])) ?>" class="btn btn-sm">View</a>
                                     <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form">
                                         <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
@@ -116,7 +138,7 @@
                                                 <option value="<?= e($status) ?>" <?= $item['status'] === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                        <button type="submit" class="btn btn-sm">Update</button>
                                     </form>
                                 </div>
                             </td>
@@ -130,7 +152,9 @@
     <?php if (($pagination['total_pages'] ?? 1) > 1): ?>
         <div class="pagination">
             <?php for ($i = 1; $i <= (int) $pagination['total_pages']; $i++): ?>
-                <a class="page-link <?= $i === (int) $pagination['page'] ? 'is-active' : '' ?>" href="<?= e(url_with_query('inquiries', ['page' => $i])) ?>"><?= e((string) $i) ?></a>
+                <a class="page-link <?= $i === (int) $pagination['page'] ? 'is-active' : '' ?>" href="<?= e(url_with_query('inquiries', ['page' => $i])) ?>">
+                    <?= e((string) $i) ?>
+                </a>
             <?php endfor; ?>
         </div>
     <?php endif; ?>

@@ -32,6 +32,77 @@ final class Inquiry
         return $stmt->fetchAll();
     }
 
+    public function dailyTrend(int $days = 7): array
+    {
+        $days = max(2, $days);
+        $start = date('Y-m-d', strtotime('-' . ($days - 1) . ' days'));
+
+        $stmt = Database::connection()->prepare(
+            'SELECT DATE(created_at) AS day,
+                    COUNT(*) AS total_count,
+                    SUM(CASE WHEN status = "unread" THEN 1 ELSE 0 END) AS unread_count,
+                    SUM(CASE WHEN status = "spam" THEN 1 ELSE 0 END) AS spam_count
+             FROM inquiries
+             WHERE DATE(created_at) >= :start
+             GROUP BY DATE(created_at)
+             ORDER BY day ASC'
+        );
+        $stmt->execute(['start' => $start]);
+        $rows = $stmt->fetchAll();
+
+        $indexed = [];
+        foreach ($rows as $row) {
+            $indexed[$row['day']] = $row;
+        }
+
+        $result = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $day = date('Y-m-d', strtotime('-' . $i . ' days'));
+            $row = $indexed[$day] ?? null;
+            $result[] = [
+                'day' => $day,
+                'label' => date('m-d', strtotime($day)),
+                'total_count' => (int) ($row['total_count'] ?? 0),
+                'unread_count' => (int) ($row['unread_count'] ?? 0),
+                'spam_count' => (int) ($row['spam_count'] ?? 0),
+            ];
+        }
+
+        return $result;
+    }
+
+    public function topForms(int $limit = 8): array
+    {
+        $sql = 'SELECT
+                    COALESCE(i.form_key, "general_form") AS form_key,
+                    COALESCE(s.site_name, "Unknown site") AS site_name,
+                    COUNT(*) AS total_count,
+                    SUM(CASE WHEN i.status = "unread" THEN 1 ELSE 0 END) AS unread_count,
+                    MAX(i.created_at) AS last_inquiry_at
+                FROM inquiries i
+                LEFT JOIN inquiry_sites s ON s.id = i.site_id
+                GROUP BY i.site_id, COALESCE(i.form_key, "general_form"), COALESCE(s.site_name, "Unknown site")
+                ORDER BY total_count DESC, last_inquiry_at DESC
+                LIMIT :limit';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    public function countrySummary(int $limit = 8): array
+    {
+        $sql = 'SELECT COALESCE(NULLIF(country, ""), "Unknown") AS country_name, COUNT(*) AS total_count
+                FROM inquiries
+                GROUP BY COALESCE(NULLIF(country, ""), "Unknown")
+                ORDER BY total_count DESC, country_name ASC
+                LIMIT :limit';
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function paginate(array $filters = [], int $page = 1, int $perPage = 20): array
     {
         $page = max(1, $page);
@@ -68,34 +139,22 @@ final class Inquiry
         ];
     }
 
-    public function exportRows(array $filters = [], int $limit = 5000): array
+    public function exportRows(array $filters = [], array $columns = [], int $limit = 5000): array
     {
+        $allowedColumns = $this->allowedExportColumns();
+        $columns = array_values(array_intersect($columns ?: array_keys($allowedColumns), array_keys($allowedColumns)));
+        if ($columns === []) {
+            $columns = array_keys($allowedColumns);
+        }
+
         [$whereSql, $bindings] = $this->buildWhere($filters);
 
-        $sql = 'SELECT
-                    i.id,
-                    s.site_name,
-                    i.form_key,
-                    i.status,
-                    i.name,
-                    i.email,
-                    i.title,
-                    i.content,
-                    i.country,
-                    i.phone,
-                    i.address,
-                    i.from_company,
-                    i.source_url,
-                    i.referer_url,
-                    i.ip,
-                    i.browser,
-                    i.device_type,
-                    i.language,
-                    i.admin_note,
-                    i.submitted_at,
-                    i.created_at,
-                    i.updated_at,
-                    i.extra_data
+        $selectParts = [];
+        foreach ($columns as $column) {
+            $selectParts[] = $allowedColumns[$column] . ' AS ' . $column;
+        }
+
+        $sql = 'SELECT ' . implode(', ', $selectParts) . '
                 FROM inquiries i
                 LEFT JOIN inquiry_sites s ON s.id = i.site_id '
                 . $whereSql .
@@ -110,6 +169,35 @@ final class Inquiry
         $stmt->execute();
 
         return $stmt->fetchAll();
+    }
+
+    public function allowedExportColumns(): array
+    {
+        return [
+            'id' => 'i.id',
+            'site_name' => 'COALESCE(s.site_name, "")',
+            'form_key' => 'COALESCE(i.form_key, "")',
+            'status' => 'i.status',
+            'name' => 'i.name',
+            'email' => 'i.email',
+            'title' => 'COALESCE(i.title, "")',
+            'content' => 'i.content',
+            'country' => 'COALESCE(i.country, "")',
+            'phone' => 'COALESCE(i.phone, "")',
+            'address' => 'COALESCE(i.address, "")',
+            'from_company' => 'COALESCE(i.from_company, "")',
+            'source_url' => 'COALESCE(i.source_url, "")',
+            'referer_url' => 'COALESCE(i.referer_url, "")',
+            'ip' => 'COALESCE(i.ip, "")',
+            'browser' => 'COALESCE(i.browser, "")',
+            'device_type' => 'COALESCE(i.device_type, "")',
+            'language' => 'COALESCE(i.language, "")',
+            'admin_note' => 'COALESCE(i.admin_note, "")',
+            'submitted_at' => 'COALESCE(i.submitted_at, "")',
+            'created_at' => 'i.created_at',
+            'updated_at' => 'i.updated_at',
+            'extra_data' => 'COALESCE(i.extra_data, "")',
+        ];
     }
 
     public function find(int $id): array|false

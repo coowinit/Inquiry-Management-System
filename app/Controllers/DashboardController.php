@@ -9,6 +9,7 @@ use App\Core\Controller;
 use App\Models\Inquiry;
 use App\Models\InquiryLog;
 use App\Models\Site;
+use App\Services\EmailNotificationService;
 
 final class DashboardController extends Controller
 {
@@ -26,6 +27,10 @@ final class DashboardController extends Controller
             'sites' => $siteModel->allWithStats(),
             'recentLogs' => $logModel->paginate(1, 6)['data'],
             'apiEndpoint' => base_url('api/v1/inquiries/submit'),
+            'trendRows' => $inquiryModel->dailyTrend(7),
+            'topForms' => $inquiryModel->topForms(6),
+            'countrySummary' => $inquiryModel->countrySummary(6),
+            'notificationSettings' => (new EmailNotificationService())->getSettings(),
         ]);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\BlacklistEmail;
 use App\Models\BlacklistIp;
 use App\Models\Inquiry;
 use App\Models\InquiryLog;
@@ -23,6 +24,7 @@ final class InquiryReceiveService
     private Site $siteModel;
     private Inquiry $inquiryModel;
     private BlacklistIp $blacklistIpModel;
+    private BlacklistEmail $blacklistEmailModel;
     private InquiryLog $logModel;
 
     public function __construct()
@@ -30,6 +32,7 @@ final class InquiryReceiveService
         $this->siteModel = new Site();
         $this->inquiryModel = new Inquiry();
         $this->blacklistIpModel = new BlacklistIp();
+        $this->blacklistEmailModel = new BlacklistEmail();
         $this->logModel = new InquiryLog();
     }
 
@@ -64,7 +67,7 @@ final class InquiryReceiveService
         $payload = $this->applySiteFieldMapping($payload, $site);
 
         $name = trim((string) ($payload['name'] ?? ''));
-        $email = trim((string) ($payload['email'] ?? ''));
+        $email = strtolower(trim((string) ($payload['email'] ?? '')));
         $content = trim((string) ($payload['content'] ?? ''));
 
         if ($name === '' || $email === '' || $content === '') {
@@ -88,6 +91,10 @@ final class InquiryReceiveService
 
         if ($this->blacklistIpModel->exists($clientIp)) {
             return $this->error('IP_BLOCKED', 'This IP address is blocked.', 403);
+        }
+
+        if ($this->blacklistEmailModel->exists($email)) {
+            return $this->error('EMAIL_BLOCKED', 'This email or email domain is blocked.', 403);
         }
 
         $rules = (new SpamRuleService())->getRules();
@@ -203,6 +210,11 @@ final class InquiryReceiveService
 
         $inquiryId = $this->inquiryModel->create($record);
         $this->logModel->create($inquiryId, null, 'api_received', empty($reasonBag) ? 'Accepted as unread' : 'Accepted as spam: ' . implode(', ', array_unique($reasonBag)));
+
+        $savedInquiry = $this->inquiryModel->find($inquiryId);
+        if (is_array($savedInquiry)) {
+            (new EmailNotificationService())->notify($savedInquiry, $site);
+        }
 
         return [
             'ok' => true,

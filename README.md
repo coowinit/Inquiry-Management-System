@@ -1,175 +1,87 @@
-# Inquiry Management System
+# Inquiry Management System v0.5.0
 
-Version: **v0.4.0**
+A lightweight **pure PHP + MySQL** inquiry hub for collecting form submissions from multiple websites and managing them in one backend.
 
-A pure PHP + MySQL inquiry management system for collecting inquiry forms from multiple websites into one centralized backend.
+## What is included in v0.5.0
 
-## v0.4.0 Highlights
+- Multi-site inquiry receive API
+- Site management with token and signature secret rotation
+- Field mapping JSON per site
+- Inquiry list, detail page, note management and status flow
+- CSV export with selectable export fields
+- Spam rule center
+- Blocked IP management
+- Blocked email / domain management
+- Email notification center
+- Dashboard with 7-day trend, top forms and country summary
+- System logs
+- GitHub Actions ZIP build workflow
 
-- Added per-site **Field Mapping JSON** so different form field names can map into the system's standard fields
-- Added **Admin Note** editing on the inquiry detail page
-- Added **Spam Rule Center** in the backend for honeypot, links, duplicates, rate limits, keywords, and disposable email domains
-- Added filtering by **Has Note** in inquiry list
-- API now stores mapped payload data into `extra_data` when field mapping is applied
-
-## Environment
-
-- PHP 8.1+
-- MySQL 5.7+ or MySQL 8+
-- Apache or Nginx
-
-## Installation
-
-1. Create a database, for example: `inquiry_system`
-2. Import:
-   - `database/schema.sql`
-   - `database/seed.sql`
-3. Update database settings in `config/database.php`
-4. Point your web root to `public/`
-5. Open the project in your browser
-
-## Upgrading from v0.3.0
-
-If you already have a v0.3.0 database, run:
-
-- `database/upgrade-v0.4.0.sql`
-
-This adds:
-
-- `field_mapping_json` on `inquiry_sites`
-- default `spam_rules` in `system_settings`
-
-## Default Admin Account
+## Default admin account
 
 - Username: `admin`
 - Password: `Admin@123456`
 
-## Main Backend Routes
+## New in this version
 
-- `/login`
-- `/dashboard`
-- `/inquiries`
-- `/inquiries/export`
-- `/sites`
-- `/sites/edit?id=1`
-- `/logs`
-- `/tools/blacklist-ips`
-- `/tools/spam-rules`
-- `/profile`
+### 1. Email notifications
 
-## API Routes
+You can now configure notification delivery from:
 
-### Health Check
+- `Tools > Email Notifications`
 
-`GET /api/v1/health`
+Supported modes:
 
-### Submit Inquiry
+- `log_only`: safe testing mode, writes notification attempts to system logs
+- `mail`: uses native PHP `mail()`
 
-`POST /api/v1/inquiries/submit`
+### 2. Email and domain blacklist
 
-Supported payload types:
+You can now block:
 
-- `application/json`
-- standard form POST
+- a specific sender email
+- an entire email domain
 
-### Minimum payload
+Manage them from:
 
-```json
-{
-  "site_key": "a_main",
-  "api_token": "token_a_main_2026",
-  "name": "John Smith",
-  "email": "john@example.com",
-  "content": "I want more information about your products."
-}
-```
+- `Tools > Blocked Emails`
 
-### Optional fields
+### 3. Better export control
 
-- `form_key`
-- `title`
-- `country`
-- `phone`
-- `address`
-- `from_company`
-- `source_url`
-- `referer_url`
-- `language`
-- `browser`
-- `device_type`
-- `submitted_at`
-- `client_ip`
-- `extra_data` (array)
+The inquiry list page now lets you choose which CSV columns should be exported.
 
-Unknown fields will also be merged into `extra_data` automatically.
+### 4. Dashboard enhancements
 
-## Field Mapping JSON
+The dashboard now shows:
 
-You can configure a site-level JSON mapping in the backend to transform external field names into the system's standard fields before validation and storage.
+- 7-day inquiry trend
+- top forms
+- top countries
+- current notification configuration summary
 
-Example:
+## Installation
 
-```json
-{
-  "name": ["fullname", "your_name"],
-  "email": ["user_email", "contact_email"],
-  "title": ["subject"],
-  "content": ["message", "comments"],
-  "from_company": ["company", "company_name"],
-  "phone": ["mobile", "tel"]
-}
-```
+### Fresh install
 
-## Signed Request Mode
+1. Create a MySQL database
+2. Import:
+   - `database/schema.sql`
+   - `database/seed.sql`
+3. Update `config/database.php`
+4. Point your web root to `public/`
 
-For sites with **Require HMAC signature** enabled:
+### Upgrade from v0.4.0
 
-- Header: `X-Timestamp` = unix timestamp in seconds
-- Header: `X-Signature` = `hash_hmac('sha256', X-Timestamp + "\n" + raw_body, signature_secret)`
+Run:
 
-Recommended usage:
+- `database/upgrade-v0.5.0.sql`
 
-1. Your website backend builds the final request body
-2. Your website backend signs the raw body with the site's signature secret
-3. Your website backend sends the request to the central inquiry system
+## API endpoint
 
-## Spam Rule Center
+- `POST /api/v1/inquiries/submit`
+- `GET /api/v1/health`
 
-The backend now includes a configurable spam rule center for:
+## Notes about outbound mail
 
-- honeypot field check
-- link threshold check
-- duplicate submission check
-- IP rate limit
-- email rate limit
-- keyword-based spam detection
-- disposable email domain detection
-
-## Example Files
-
-- `examples/php-forwarder.php`
-- `examples/php-signed-forwarder.php`
-- `examples/javascript-fetch-example.js`
-
-## GitHub Actions
-
-Workflow file:
-
-- `.github/workflows/build-release.yml`
-
-It creates a ZIP package automatically when you push a tag like:
-
-```bash
-git tag v0.4.0
-git push origin v0.4.0
-```
-
-## Notes
-
-Recommended production flow:
-
-1. Website form submits to the current website backend
-2. The current website backend maps and forwards the payload to this central system
-3. This system validates, filters, stores, and manages the inquiry
-
-This is safer than exposing tokens directly in front-end JavaScript.
+When using `transport = mail`, the hosting environment must already support outbound email for PHP `mail()`.
+If your server does not support it yet, use `log_only` first to verify the notification workflow safely.

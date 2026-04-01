@@ -565,3 +565,74 @@ textarea.form-input {
         flex-wrap: wrap;
     }
 }
+
+.export-box {
+    margin-top: 8px;
+    padding: 18px;
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    background: #fbfdff;
+}
+
+.section-mini-title {
+    margin: 0;
+    font-size: 16px;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+
+.badge-neutral,
+.badge-success {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badge-neutral {
+    background: #eef2f7;
+    color: #475569;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.trend-list {
+    display: grid;
+    gap: 14px;
+}
+
+.trend-row {
+    display: grid;
+    gap: 8px;
+}
+
+.trend-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.trend-bar-bg {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: #e5edf9;
+    overflow: hidden;
+}
+
+.trend-bar {
+    height: 100%;
+    min-width: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}

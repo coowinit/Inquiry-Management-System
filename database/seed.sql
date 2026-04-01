@@ -16,7 +16,8 @@ VALUES
 ('c.com Distributor Website', 'c.com', 'c_distributor', 'token_c_distributor_2026', 'sig_c_distributor_2026_secret_1234567890', 0, 'active', 'Distributor recruitment website', NULL);
 
 INSERT INTO system_settings (setting_key, setting_value)
-VALUES (
+VALUES
+(
     'spam_rules',
     JSON_OBJECT(
         'enable_honeypot', true,
@@ -36,6 +37,20 @@ VALUES (
         'enable_disposable_email_domains', true,
         'disposable_email_domains', JSON_ARRAY('mailinator.com', 'tempmail.com', '10minutemail.com', 'guerrillamail.com')
     )
+),
+(
+    'email_notifications',
+    JSON_OBJECT(
+        'enabled', false,
+        'transport', 'log_only',
+        'from_email', 'no-reply@example.com',
+        'from_name', 'Inquiry Management System',
+        'subject_prefix', '[IMS]',
+        'recipients', JSON_ARRAY('sales@example.com'),
+        'notify_statuses', JSON_ARRAY('unread'),
+        'include_spam', false,
+        'include_admin_link', true
+    )
 )
 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW();
 
@@ -44,10 +59,15 @@ VALUES
 ('85.209.11.20', 'Spam source'),
 ('5.252.30.198', 'Repeated suspicious submissions');
 
+INSERT INTO blacklist_emails (rule_type, rule_value, reason)
+VALUES
+('email', 'blocked@example.com', 'Known spam sender'),
+('domain', 'mailinator.com', 'Disposable mailbox domain');
+
 INSERT INTO inquiries (
     site_id, form_key, name, email, title, content, country, phone, address, from_company,
     source_url, referer_url, ip, user_agent, browser, device_type, language, status, is_read, is_spam,
-    extra_data, raw_payload, submitted_at
+    admin_note, extra_data, raw_payload, submitted_at
 )
 VALUES
 (
@@ -71,6 +91,7 @@ VALUES
     'unread',
     0,
     0,
+    'Hot lead from sample page',
     JSON_OBJECT('product_interest', 'WPC Decking', 'sample_pack', 'Yes'),
     JSON_OBJECT('name', 'Matthew Pickering', 'email', 'mattp@hycom.com.au', 'sample_pack', 'Yes'),
     NOW()
@@ -96,6 +117,7 @@ VALUES
     'read',
     1,
     0,
+    NULL,
     JSON_OBJECT('product_type', 'fence', 'quantity', 'small batch'),
     JSON_OBJECT('subject', 'Deck and fence sample', 'message', 'Want to get samples'),
     NOW()
@@ -121,6 +143,7 @@ VALUES
     'trash',
     1,
     0,
+    'Archived after duplicate follow-up',
     JSON_OBJECT('quantity', '300', 'size', '25x40'),
     JSON_OBJECT('quantity', '300', 'size', '25x40', 'name', 'Harish'),
     NOW()
@@ -130,4 +153,5 @@ INSERT INTO inquiry_logs (inquiry_id, admin_id, action, action_note)
 VALUES
 (1, 1, 'seed_created', 'Initial demo inquiry record'),
 (2, 1, 'status_changed', 'Marked as read for demo data'),
-(NULL, 1, 'site_created', 'Seeded demo sites for local development');
+(NULL, 1, 'site_created', 'Seeded demo sites for local development'),
+(NULL, 1, 'email_notifications_updated', 'Seeded default notification settings for local development');
