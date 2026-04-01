@@ -636,3 +636,13 @@ textarea.form-input {
     border-radius: 999px;
     background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
 }
+
+
+.status-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 82px; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.bulk-form-grid { display: grid; gap: 12px; }
+.bulk-actions-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.checkbox-cell { width: 46px; }
+.checkbox-cell input { width: 16px; height: 16px; }
+.mt-20 { margin-top: 20px; }
+.bulk-actions-bar .form-input { min-width: 180px; }
+.simple-list-item .split-header { align-items: flex-start; }

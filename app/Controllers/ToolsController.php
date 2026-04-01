@@ -204,4 +204,23 @@ final class ToolsController extends Controller
 
         redirect('tools/email-notifications');
     }
+
+    public function testEmailNotifications(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('tools/email-notifications');
+        }
+
+        $sent = (new EmailNotificationService())->sendTest(Auth::user() ?: []);
+
+        if ($sent) {
+            (new InquiryLog())->create(null, Auth::id(), 'notification_test_sent', 'Ran email notification test');
+            flash('success', 'Test notification executed. Check your inbox or system logs.');
+        } else {
+            flash('error', 'Test notification did not run. Check whether notifications are enabled and recipients are configured.');
+        }
+
+        redirect('tools/email-notifications');
+    }
 }

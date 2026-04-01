@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.0
+- Added inquiry follow-up records and follow-up history on the detail page
+- Added owner assignment for individual inquiries and bulk assignment from the list page
+- Added bulk actions for status updates and assignee changes
+- Added Reports & Analytics page with site, form, country, status and assignee summaries
+- Added manual test trigger for email notifications
+- Added assigned owner and follow-up count columns to the inquiry list
+- Added database upgrade script for assignee support and follow-up table
+
 ## v0.5.0
 
 - added blocked email and blocked domain management

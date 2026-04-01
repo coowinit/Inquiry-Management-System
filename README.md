@@ -85,3 +85,12 @@ Run:
 
 When using `transport = mail`, the hosting environment must already support outbound email for PHP `mail()`.
 If your server does not support it yet, use `log_only` first to verify the notification workflow safely.
+
+
+## v0.6.0
+
+- Inquiry follow-up records
+- Owner assignment per inquiry
+- Bulk actions on inquiry list
+- Reports & analytics page
+- Email notification test trigger

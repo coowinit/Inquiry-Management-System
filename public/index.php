@@ -9,6 +9,7 @@ use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\InquiryController;
 use App\Controllers\LogController;
+use App\Controllers\ReportController;
 use App\Controllers\SettingsController;
 use App\Controllers\SiteController;
 use App\Controllers\ToolsController;
@@ -28,11 +29,15 @@ $router->post('/login', [AuthController::class, 'login']);
 $router->get('/logout', [AuthController::class, 'logout'], true);
 
 $router->get('/dashboard', [DashboardController::class, 'index'], true);
+$router->get('/reports/stats', [ReportController::class, 'stats'], true);
 
 $router->get('/inquiries', [InquiryController::class, 'index'], true);
 $router->get('/inquiry', [InquiryController::class, 'show'], true);
 $router->post('/inquiry/status', [InquiryController::class, 'updateStatus'], true);
 $router->post('/inquiry/note', [InquiryController::class, 'updateNote'], true);
+$router->post('/inquiry/assign', [InquiryController::class, 'assign'], true);
+$router->post('/inquiry/followup', [InquiryController::class, 'addFollowup'], true);
+$router->post('/inquiries/bulk', [InquiryController::class, 'bulkUpdate'], true);
 $router->get('/inquiries/export', [InquiryController::class, 'exportCsv'], true);
 
 $router->get('/sites', [SiteController::class, 'index'], true);
@@ -54,6 +59,7 @@ $router->get('/tools/spam-rules', [ToolsController::class, 'spamRules'], true);
 $router->post('/tools/spam-rules', [ToolsController::class, 'updateSpamRules'], true);
 $router->get('/tools/email-notifications', [ToolsController::class, 'emailNotifications'], true);
 $router->post('/tools/email-notifications', [ToolsController::class, 'updateEmailNotifications'], true);
+$router->post('/tools/email-notifications/test', [ToolsController::class, 'testEmailNotifications'], true);
 
 $router->get('/profile', [SettingsController::class, 'profile'], true);
 $router->post('/profile', [SettingsController::class, 'updateProfile'], true);

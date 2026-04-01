@@ -9,34 +9,24 @@ use App\Models\SystemSetting;
 
 final class EmailNotificationService
 {
-    public const SETTING_KEY = 'email_notifications';
+    private const SETTING_KEY = 'email_notifications';
 
-    public static function defaults(): array
+    public function getSettings(): array
     {
-        return [
+        $settings = (new SystemSetting())->getJson(self::SETTING_KEY, [
             'enabled' => false,
             'transport' => 'log_only',
             'from_email' => 'no-reply@example.com',
             'from_name' => 'Inquiry Management System',
             'subject_prefix' => '[IMS]',
-            'recipients' => ['sales@example.com'],
+            'recipients' => [],
             'notify_statuses' => ['unread'],
             'include_spam' => false,
             'include_admin_link' => true,
-        ];
-    }
-
-    public function getSettings(): array
-    {
-        $saved = (new SystemSetting())->getJson(self::SETTING_KEY, []);
-        $settings = array_replace_recursive(self::defaults(), $saved);
+        ]);
 
         $settings['enabled'] = !empty($settings['enabled']);
-        $settings['include_spam'] = !empty($settings['include_spam']);
-        $settings['include_admin_link'] = !empty($settings['include_admin_link']);
-        $settings['transport'] = in_array(($settings['transport'] ?? 'log_only'), ['log_only', 'mail'], true)
-            ? $settings['transport']
-            : 'log_only';
+        $settings['transport'] = in_array(($settings['transport'] ?? 'log_only'), ['log_only', 'mail'], true) ? $settings['transport'] : 'log_only';
         $settings['from_email'] = trim((string) ($settings['from_email'] ?? 'no-reply@example.com')) ?: 'no-reply@example.com';
         $settings['from_name'] = trim((string) ($settings['from_name'] ?? 'Inquiry Management System')) ?: 'Inquiry Management System';
         $settings['subject_prefix'] = trim((string) ($settings['subject_prefix'] ?? '[IMS]')) ?: '[IMS]';
@@ -112,6 +102,33 @@ final class EmailNotificationService
         return $sent;
     }
 
+    public function sendTest(array $admin = []): bool
+    {
+        $settings = $this->getSettings();
+        if (empty($settings['enabled']) || empty($settings['recipients'])) {
+            return false;
+        }
+
+        $site = ['site_name' => 'Manual Test', 'site_domain' => base_url()];
+        $inquiry = [
+            'id' => 0,
+            'status' => in_array('unread', $settings['notify_statuses'], true) ? 'unread' : ($settings['notify_statuses'][0] ?? 'unread'),
+            'form_key' => 'manual_test',
+            'name' => $admin['nickname'] ?? $admin['username'] ?? 'Admin User',
+            'email' => $admin['email'] ?? 'admin@example.com',
+            'phone' => '-',
+            'from_company' => 'Internal Test',
+            'country' => '-',
+            'title' => 'Email notification test',
+            'content' => 'This is a manually triggered notification test from the Email Notifications tool page.',
+            'source_url' => base_url('tools/email-notifications'),
+            'ip' => request_ip(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+
+        return $this->notify($inquiry, $site);
+    }
+
     private function buildBody(array $inquiry, array $site, array $settings): string
     {
         $lines = [
@@ -135,7 +152,7 @@ final class EmailNotificationService
             'Created At: ' . (($inquiry['created_at'] ?? '') !== '' ? $inquiry['created_at'] : date('Y-m-d H:i:s')),
         ];
 
-        if (!empty($settings['include_admin_link'])) {
+        if (!empty($settings['include_admin_link']) && !empty($inquiry['id'])) {
             $lines[] = '';
             $lines[] = 'Admin Link: ' . base_url('inquiry?id=' . (int) ($inquiry['id'] ?? 0));
         }

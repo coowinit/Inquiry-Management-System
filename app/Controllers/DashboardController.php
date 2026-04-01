@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Models\Inquiry;
+use App\Models\InquiryFollowup;
 use App\Models\InquiryLog;
 use App\Models\Site;
 use App\Services\EmailNotificationService;
@@ -18,6 +19,7 @@ final class DashboardController extends Controller
         $inquiryModel = new Inquiry();
         $siteModel = new Site();
         $logModel = new InquiryLog();
+        $followupModel = new InquiryFollowup();
 
         $this->view('dashboard/index', [
             'pageTitle' => 'Dashboard',
@@ -31,6 +33,7 @@ final class DashboardController extends Controller
             'topForms' => $inquiryModel->topForms(6),
             'countrySummary' => $inquiryModel->countrySummary(6),
             'notificationSettings' => (new EmailNotificationService())->getSettings(),
+            'openFollowupsCount' => $followupModel->countOpenByAssignee(Auth::id() ?? 0),
         ]);
     }
 }

@@ -7,7 +7,9 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Csrf;
+use App\Models\Admin;
 use App\Models\Inquiry;
+use App\Models\InquiryFollowup;
 use App\Models\InquiryLog;
 use App\Models\Site;
 
@@ -23,6 +25,7 @@ final class InquiryController extends Controller
 
         $inquiryModel = new Inquiry();
         $siteModel = new Site();
+        $adminModel = new Admin();
         $pagination = $inquiryModel->paginate($filters, $page, $perPage);
         $allowedExportFields = $inquiryModel->allowedExportColumns();
         $selectedExportFields = $this->collectExportFields(array_keys($allowedExportFields));
@@ -32,6 +35,7 @@ final class InquiryController extends Controller
             'pagination' => $pagination,
             'filters' => $filters,
             'sites' => $siteModel->all(),
+            'admins' => $adminModel->allBrief(),
             'csrfToken' => Csrf::token(),
             'allowedExportFields' => $allowedExportFields,
             'selectedExportFields' => $selectedExportFields,
@@ -43,6 +47,7 @@ final class InquiryController extends Controller
         $id = (int) ($_GET['id'] ?? 0);
         $inquiryModel = new Inquiry();
         $logModel = new InquiryLog();
+        $followupModel = new InquiryFollowup();
         $inquiry = $inquiryModel->find($id);
 
         if (!$inquiry) {
@@ -74,6 +79,8 @@ final class InquiryController extends Controller
             'extraData' => $extraData,
             'rawPayload' => $rawPayload,
             'logs' => $logModel->latestForInquiry($id, 8),
+            'followups' => $followupModel->latestForInquiry($id, 20),
+            'admins' => (new Admin())->allBrief(),
             'csrfToken' => Csrf::token(),
         ]);
     }
@@ -94,8 +101,7 @@ final class InquiryController extends Controller
             redirect('inquiries');
         }
 
-        $inquiryModel = new Inquiry();
-        $updated = $inquiryModel->updateStatus($id, $status);
+        $updated = (new Inquiry())->updateStatus($id, $status);
 
         if ($updated) {
             (new InquiryLog())->create($id, Auth::id(), 'status_changed', 'Changed status to ' . $status);
@@ -135,6 +141,126 @@ final class InquiryController extends Controller
         redirect('inquiry?id=' . $id);
     }
 
+    public function assign(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('inquiries');
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        $adminIdRaw = trim((string) ($_POST['assigned_admin_id'] ?? ''));
+        $adminId = $adminIdRaw !== '' ? (int) $adminIdRaw : null;
+
+        if ($id <= 0) {
+            flash('error', 'Invalid inquiry id.');
+            redirect('inquiries');
+        }
+
+        $updated = (new Inquiry())->updateAssignedAdmin($id, $adminId);
+
+        if ($updated) {
+            $assigneeText = $adminId ? 'Assigned to admin #' . $adminId : 'Cleared assignee';
+            (new InquiryLog())->create($id, Auth::id(), 'assignee_updated', $assigneeText);
+            flash('success', 'Inquiry assignee updated successfully.');
+        } else {
+            flash('error', 'Unable to update inquiry assignee.');
+        }
+
+        redirect('inquiry?id=' . $id);
+    }
+
+    public function addFollowup(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('inquiries');
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        $type = trim((string) ($_POST['followup_type'] ?? 'note'));
+        $content = trim((string) ($_POST['content'] ?? ''));
+        $nextContactAt = trim((string) ($_POST['next_contact_at'] ?? ''));
+        $isCompleted = isset($_POST['is_completed']) ? 1 : 0;
+
+        if ($id <= 0 || $content === '') {
+            flash('error', 'Follow-up content is required.');
+            redirect('inquiry?id=' . $id);
+        }
+
+        if (!in_array($type, ['note', 'email', 'call', 'meeting', 'todo', 'status'], true)) {
+            $type = 'note';
+        }
+
+        $nextContactAtValue = null;
+        if ($nextContactAt !== '') {
+            $timestamp = strtotime($nextContactAt);
+            if ($timestamp !== false) {
+                $nextContactAtValue = date('Y-m-d H:i:s', $timestamp);
+            }
+        }
+
+        $followupId = (new InquiryFollowup())->create([
+            'inquiry_id' => $id,
+            'admin_id' => Auth::id(),
+            'followup_type' => $type,
+            'content' => $content,
+            'next_contact_at' => $nextContactAtValue,
+            'is_completed' => $isCompleted,
+        ]);
+
+        if ($followupId > 0) {
+            (new InquiryLog())->create($id, Auth::id(), 'followup_added', 'Added ' . $type . ' follow-up #' . $followupId);
+            flash('success', 'Follow-up record added successfully.');
+        } else {
+            flash('error', 'Unable to add follow-up record.');
+        }
+
+        redirect('inquiry?id=' . $id);
+    }
+
+    public function bulkUpdate(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('inquiries');
+        }
+
+        $ids = $_POST['ids'] ?? [];
+        $ids = is_array($ids) ? $ids : [];
+        $action = trim((string) ($_POST['bulk_action'] ?? ''));
+        $inquiryModel = new Inquiry();
+        $logModel = new InquiryLog();
+
+        if ($ids === []) {
+            flash('error', 'Please select at least one inquiry.');
+            redirect('inquiries?' . current_query());
+        }
+
+        $affected = 0;
+        if (in_array($action, ['mark_unread', 'mark_read', 'mark_spam', 'move_trash'], true)) {
+            $statusMap = [
+                'mark_unread' => 'unread',
+                'mark_read' => 'read',
+                'mark_spam' => 'spam',
+                'move_trash' => 'trash',
+            ];
+            $status = $statusMap[$action];
+            $affected = $inquiryModel->bulkUpdateStatus($ids, $status);
+            $logModel->create(null, Auth::id(), 'bulk_status_changed', 'Bulk updated ' . $affected . ' inquiries to ' . $status);
+        } elseif (in_array($action, ['assign_selected', 'clear_assignee'], true)) {
+            $adminId = $action === 'assign_selected' ? (int) ($_POST['bulk_assigned_admin_id'] ?? 0) : null;
+            $affected = $inquiryModel->bulkAssign($ids, $adminId > 0 ? $adminId : null);
+            $logModel->create(null, Auth::id(), 'bulk_assignee_updated', 'Bulk updated assignee for ' . $affected . ' inquiries');
+        } else {
+            flash('error', 'Please choose a valid bulk action.');
+            redirect('inquiries?' . current_query());
+        }
+
+        flash('success', 'Bulk action completed for ' . $affected . ' inquiries.');
+        redirect('inquiries?' . current_query());
+    }
+
     public function exportCsv(): void
     {
         $filters = $this->collectFilters();
@@ -154,6 +280,8 @@ final class InquiryController extends Controller
 
     private function collectFilters(): array
     {
+        $assigned = trim((string) ($_GET['assigned_admin_id'] ?? ''));
+
         $filters = [
             'status' => trim((string) ($_GET['status'] ?? '')),
             'site_id' => (int) ($_GET['site_id'] ?? 0),
@@ -161,6 +289,7 @@ final class InquiryController extends Controller
             'date_from' => trim((string) ($_GET['date_from'] ?? '')),
             'date_to' => trim((string) ($_GET['date_to'] ?? '')),
             'has_note' => trim((string) ($_GET['has_note'] ?? '')),
+            'assigned_admin_id' => $assigned,
         ];
 
         if ($filters['site_id'] === 0) {
