@@ -128,8 +128,10 @@
     </div>
 </div>
 
-<form method="post" action="<?= e(base_url('inquiries/bulk')) ?>" class="card">
-    <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+<div class="card">
+    <form id="bulkInquiryForm" method="post" action="<?= e(base_url('inquiries/bulk')) ?>" class="hidden-form">
+        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+    </form>
     <div class="card-header split-header">
         <h2>Inquiry List</h2>
         <div class="muted">Total: <?= e((string) $pagination['total']) ?></div>
@@ -138,7 +140,7 @@
     <div class="card-body filter-grid bulk-toolbar">
         <label class="form-label">
             <span>Bulk Action</span>
-            <select id="bulkActionSelect" name="bulk_action" class="form-input">
+            <select id="bulkActionSelect" name="bulk_action" class="form-input" form="bulkInquiryForm">
                 <option value="">Choose an action</option>
                 <option value="mark_unread">Mark unread</option>
                 <option value="mark_read">Mark read</option>
@@ -150,7 +152,7 @@
         </label>
         <label class="form-label">
             <span>Owner</span>
-            <select id="bulkAssigneeSelect" name="bulk_assigned_admin_id" class="form-input">
+            <select id="bulkAssigneeSelect" name="bulk_assigned_admin_id" class="form-input" form="bulkInquiryForm">
                 <option value="">Choose owner</option>
                 <?php foreach ($admins as $admin): ?>
                     <option value="<?= (int) $admin['id'] ?>"><?= e($admin['nickname'] ?: $admin['username']) ?></option>
@@ -158,7 +160,7 @@
             </select>
         </label>
         <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">Run Bulk Action</button>
+            <button type="submit" class="btn btn-primary" form="bulkInquiryForm">Run Bulk Action</button>
         </div>
     </div>
 
@@ -185,7 +187,7 @@
                 <?php else: ?>
                     <?php foreach ($pagination['data'] as $item): ?>
                         <tr>
-                            <td><input class="row-check" type="checkbox" name="ids[]" value="<?= (int) $item['id'] ?>"></td>
+                            <td><input class="row-check" type="checkbox" name="ids[]" value="<?= (int) $item['id'] ?>" form="bulkInquiryForm"></td>
                             <td>#<?= e((string) $item['id']) ?></td>
                             <td>
                                 <div class="table-title"><?= e($item['title'] ?: 'No title') ?></div>
@@ -219,7 +221,7 @@
                             <td>
                                 <div class="inline-form">
                                     <a href="<?= e(base_url('inquiry?id=' . (int) $item['id'])) ?>" class="btn btn-sm">View</a>
-                                    <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form">
+                                    <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form row-status-form">
                                         <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
                                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
                                         <input type="hidden" name="back" value="<?= e('inquiries?' . current_query()) ?>">
@@ -246,4 +248,4 @@
             <?php endfor; ?>
         </div>
     <?php endif; ?>
-</form>
+</div>

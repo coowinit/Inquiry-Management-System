@@ -112,7 +112,10 @@ final class InquiryFollowup
         $offset = ($page - 1) * $perPage;
         [$whereSql, $bindings] = $this->buildReminderWhere($filters);
 
-        $countStmt = Database::connection()->prepare('SELECT COUNT(*) FROM inquiry_followups f ' . $whereSql);
+        $countSql = 'SELECT COUNT(*)
+                     FROM inquiry_followups f
+                     INNER JOIN inquiries i ON i.id = f.inquiry_id ' . $whereSql;
+        $countStmt = Database::connection()->prepare($countSql);
         $countStmt->execute($bindings);
         $total = (int) $countStmt->fetchColumn();
 
