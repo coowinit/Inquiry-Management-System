@@ -17,6 +17,11 @@ final class InquiryController extends Controller
 {
     public function index(): void
     {
+        if (!Auth::can('inquiries.view')) {
+            flash('error', 'You do not have permission to access inquiries.');
+            redirect('dashboard');
+        }
+
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $user = Auth::user();
         $perPage = max(10, min(100, (int) ($user['page_size'] ?? 20)));
@@ -44,6 +49,11 @@ final class InquiryController extends Controller
 
     public function show(): void
     {
+        if (!Auth::can('inquiries.view')) {
+            flash('error', 'You do not have permission to access inquiries.');
+            redirect('dashboard');
+        }
+
         $id = (int) ($_GET['id'] ?? 0);
         $inquiryModel = new Inquiry();
         $logModel = new InquiryLog();
@@ -56,22 +66,14 @@ final class InquiryController extends Controller
             return;
         }
 
-        if ($inquiry['status'] === 'unread') {
+        if ($inquiry['status'] === 'unread' && Auth::can('inquiries.update')) {
             $inquiryModel->updateStatus($id, 'read');
             $logModel->create($id, Auth::id(), 'viewed', 'Marked as read from detail page');
             $inquiry = $inquiryModel->find($id);
         }
 
-        $extraData = [];
-        $rawPayload = [];
-
-        if (!empty($inquiry['extra_data'])) {
-            $extraData = json_decode((string) $inquiry['extra_data'], true) ?: [];
-        }
-
-        if (!empty($inquiry['raw_payload'])) {
-            $rawPayload = json_decode((string) $inquiry['raw_payload'], true) ?: [];
-        }
+        $extraData = !empty($inquiry['extra_data']) ? (json_decode((string) $inquiry['extra_data'], true) ?: []) : [];
+        $rawPayload = !empty($inquiry['raw_payload']) ? (json_decode((string) $inquiry['raw_payload'], true) ?: []) : [];
 
         $this->view('dashboard/inquiry-detail', [
             'pageTitle' => 'Inquiry Detail',
@@ -82,12 +84,13 @@ final class InquiryController extends Controller
             'followups' => $followupModel->latestForInquiry($id, 20),
             'admins' => (new Admin())->allBrief(),
             'csrfToken' => Csrf::token(),
+            'canUpdate' => Auth::can('inquiries.update'),
         ]);
     }
 
     public function updateStatus(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('inquiries.update') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('inquiries');
         }
@@ -116,7 +119,7 @@ final class InquiryController extends Controller
 
     public function updateNote(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('inquiries.update') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('inquiries');
         }
@@ -143,7 +146,7 @@ final class InquiryController extends Controller
 
     public function assign(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('inquiries.update') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('inquiries');
         }
@@ -172,7 +175,7 @@ final class InquiryController extends Controller
 
     public function addFollowup(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('followups.manage') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('inquiries');
         }
@@ -180,7 +183,7 @@ final class InquiryController extends Controller
         $id = (int) ($_POST['id'] ?? 0);
         $type = trim((string) ($_POST['followup_type'] ?? 'note'));
         $content = trim((string) ($_POST['content'] ?? ''));
-        $nextContactAt = trim((string) ($_POST['next_contact_at'] ?? ''));
+        $nextContactAtValue = $this->normalizeDateTime($_POST['next_contact_at'] ?? '');
         $isCompleted = isset($_POST['is_completed']) ? 1 : 0;
 
         if ($id <= 0 || $content === '') {
@@ -190,14 +193,6 @@ final class InquiryController extends Controller
 
         if (!in_array($type, ['note', 'email', 'call', 'meeting', 'todo', 'status'], true)) {
             $type = 'note';
-        }
-
-        $nextContactAtValue = null;
-        if ($nextContactAt !== '') {
-            $timestamp = strtotime($nextContactAt);
-            if ($timestamp !== false) {
-                $nextContactAtValue = date('Y-m-d H:i:s', $timestamp);
-            }
         }
 
         $followupId = (new InquiryFollowup())->create([
@@ -219,9 +214,68 @@ final class InquiryController extends Controller
         redirect('inquiry?id=' . $id);
     }
 
+    public function updateFollowup(): void
+    {
+        if (!Auth::can('followups.manage') || !Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('inquiries');
+        }
+        $followupId = (int) ($_POST['followup_id'] ?? 0);
+        $inquiryId = (int) ($_POST['id'] ?? 0);
+        $type = trim((string) ($_POST['followup_type'] ?? 'note'));
+        $content = trim((string) ($_POST['content'] ?? ''));
+        $nextContactAtValue = $this->normalizeDateTime($_POST['next_contact_at'] ?? '');
+        $isCompleted = isset($_POST['is_completed']) ? 1 : 0;
+
+        if ($followupId <= 0 || $inquiryId <= 0 || $content === '') {
+            flash('error', 'Invalid follow-up update request.');
+            redirect('inquiry?id=' . $inquiryId);
+        }
+        if (!in_array($type, ['note', 'email', 'call', 'meeting', 'todo', 'status'], true)) {
+            $type = 'note';
+        }
+
+        $updated = (new InquiryFollowup())->update($followupId, [
+            'followup_type' => $type,
+            'content' => $content,
+            'next_contact_at' => $nextContactAtValue,
+            'is_completed' => $isCompleted,
+        ]);
+        if ($updated) {
+            (new InquiryLog())->create($inquiryId, Auth::id(), 'followup_updated', 'Updated follow-up #' . $followupId);
+            flash('success', 'Follow-up updated successfully.');
+        } else {
+            flash('error', 'Unable to update follow-up.');
+        }
+        redirect('inquiry?id=' . $inquiryId);
+    }
+
+    public function toggleFollowup(): void
+    {
+        if (!Auth::can('followups.manage') || !Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('inquiries');
+        }
+        $followupId = (int) ($_POST['followup_id'] ?? 0);
+        $inquiryId = (int) ($_POST['id'] ?? 0);
+        $complete = (int) ($_POST['complete'] ?? 0) === 1;
+        if ($followupId <= 0 || $inquiryId <= 0) {
+            flash('error', 'Invalid follow-up request.');
+            redirect('inquiry?id=' . $inquiryId);
+        }
+        $updated = (new InquiryFollowup())->markCompleted($followupId, $complete);
+        if ($updated) {
+            (new InquiryLog())->create($inquiryId, Auth::id(), 'followup_completion_toggled', ($complete ? 'Completed' : 'Reopened') . ' follow-up #' . $followupId);
+            flash('success', 'Follow-up status updated.');
+        } else {
+            flash('error', 'Unable to update follow-up status.');
+        }
+        redirect('inquiry?id=' . $inquiryId);
+    }
+
     public function bulkUpdate(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('inquiries.update') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('inquiries');
         }
@@ -239,12 +293,7 @@ final class InquiryController extends Controller
 
         $affected = 0;
         if (in_array($action, ['mark_unread', 'mark_read', 'mark_spam', 'move_trash'], true)) {
-            $statusMap = [
-                'mark_unread' => 'unread',
-                'mark_read' => 'read',
-                'mark_spam' => 'spam',
-                'move_trash' => 'trash',
-            ];
+            $statusMap = ['mark_unread' => 'unread', 'mark_read' => 'read', 'mark_spam' => 'spam', 'move_trash' => 'trash'];
             $status = $statusMap[$action];
             $affected = $inquiryModel->bulkUpdateStatus($ids, $status);
             $logModel->create(null, Auth::id(), 'bulk_status_changed', 'Bulk updated ' . $affected . ' inquiries to ' . $status);
@@ -263,48 +312,61 @@ final class InquiryController extends Controller
 
     public function exportCsv(): void
     {
+        if (!Auth::can('inquiries.view')) {
+            flash('error', 'You do not have permission to export inquiries.');
+            redirect('dashboard');
+        }
+
         $filters = $this->collectFilters();
-        $inquiryModel = new Inquiry();
-        $allowedColumns = array_keys($inquiryModel->allowedExportColumns());
-        $selectedFields = $this->collectExportFields($allowedColumns);
-        $rows = $inquiryModel->exportRows($filters, $selectedFields, 5000);
+        $model = new Inquiry();
+        $allowed = $model->allowedExportColumns();
+        $columns = $this->collectExportFields(array_keys($allowed));
+        $rows = $model->exportRows($filters, $columns, 5000);
 
-        (new InquiryLog())->create(null, Auth::id(), 'inquiries_exported', 'Exported ' . count($rows) . ' rows as CSV with fields: ' . implode(', ', $selectedFields));
-
-        send_csv_download(
-            'inquiries-' . date('Ymd-His') . '.csv',
-            $selectedFields,
-            $rows
-        );
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="inquiries-' . date('Ymd-His') . '.csv"');
+        $fp = fopen('php://output', 'w');
+        fputcsv($fp, $columns);
+        foreach ($rows as $row) {
+            $line = [];
+            foreach ($columns as $column) {
+                $line[] = $row[$column] ?? '';
+            }
+            fputcsv($fp, $line);
+        }
+        fclose($fp);
+        (new InquiryLog())->create(null, Auth::id(), 'csv_exported', 'Exported ' . count($rows) . ' inquiries');
+        exit;
     }
 
     private function collectFilters(): array
     {
-        $assigned = trim((string) ($_GET['assigned_admin_id'] ?? ''));
-
-        $filters = [
+        return [
             'status' => trim((string) ($_GET['status'] ?? '')),
-            'site_id' => (int) ($_GET['site_id'] ?? 0),
-            'keyword' => trim((string) ($_GET['keyword'] ?? '')),
+            'site_id' => trim((string) ($_GET['site_id'] ?? '')),
             'date_from' => trim((string) ($_GET['date_from'] ?? '')),
             'date_to' => trim((string) ($_GET['date_to'] ?? '')),
+            'keyword' => trim((string) ($_GET['keyword'] ?? '')),
             'has_note' => trim((string) ($_GET['has_note'] ?? '')),
-            'assigned_admin_id' => $assigned,
+            'assigned_admin_id' => trim((string) ($_GET['assigned_admin_id'] ?? '')),
         ];
-
-        if ($filters['site_id'] === 0) {
-            $filters['site_id'] = null;
-        }
-
-        return $filters;
     }
 
     private function collectExportFields(array $allowed): array
     {
-        $fields = $_GET['fields'] ?? [];
-        $fields = is_array($fields) ? array_map('strval', $fields) : [];
-        $fields = array_values(array_intersect($fields, $allowed));
+        $selected = $_GET['export_fields'] ?? [];
+        $selected = is_array($selected) ? $selected : [];
+        $selected = array_values(array_intersect($selected, $allowed));
+        return $selected !== [] ? $selected : ['id', 'site_name', 'status', 'name', 'email', 'title', 'content', 'created_at'];
+    }
 
-        return $fields !== [] ? $fields : $allowed;
+    private function normalizeDateTime(mixed $input): ?string
+    {
+        $value = trim((string) $input);
+        if ($value === '') {
+            return null;
+        }
+        $timestamp = strtotime($value);
+        return $timestamp !== false ? date('Y-m-d H:i:s', $timestamp) : null;
     }
 }

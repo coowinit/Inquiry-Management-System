@@ -7,7 +7,7 @@ namespace App\Controllers;
 use App\Core\Auth;
 use App\Core\Controller;
 use App\Core\Csrf;
-
+use App\Models\Admin;
 
 final class AuthController extends Controller
 {
@@ -43,7 +43,12 @@ final class AuthController extends Controller
         }
 
         if (!Auth::attempt($username, $password)) {
-            flash('error', 'Invalid username or password.');
+            $candidate = (new Admin())->findByUsername($username);
+            if ($candidate && ($candidate['status'] ?? 'active') !== 'active') {
+                flash('error', 'This account is disabled.');
+            } else {
+                flash('error', 'Invalid username or password.');
+            }
             redirect('login');
         }
 

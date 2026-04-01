@@ -6,6 +6,7 @@ namespace App\Controllers;
 
 use App\Core\Auth;
 use App\Core\Controller;
+use App\Models\ApiRequestLog;
 use App\Models\Inquiry;
 use App\Models\InquiryFollowup;
 use App\Models\InquiryLog;
@@ -20,6 +21,7 @@ final class DashboardController extends Controller
         $siteModel = new Site();
         $logModel = new InquiryLog();
         $followupModel = new InquiryFollowup();
+        $apiLogModel = new ApiRequestLog();
 
         $this->view('dashboard/index', [
             'pageTitle' => 'Dashboard',
@@ -28,6 +30,8 @@ final class DashboardController extends Controller
             'latestInquiries' => $inquiryModel->latest(6),
             'sites' => $siteModel->allWithStats(),
             'recentLogs' => $logModel->paginate(1, 6)['data'],
+            'recentApiLogs' => $apiLogModel->recent(6),
+            'apiStatusCounts' => $apiLogModel->statusCounts(30),
             'apiEndpoint' => base_url('api/v1/inquiries/submit'),
             'trendRows' => $inquiryModel->dailyTrend(7),
             'topForms' => $inquiryModel->topForms(6),

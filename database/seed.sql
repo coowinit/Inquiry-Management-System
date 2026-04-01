@@ -1,4 +1,4 @@
-INSERT INTO admins (username, nickname, email, website, bio, page_size, password_hash)
+INSERT INTO admins (username, nickname, email, website, bio, page_size, password_hash, role, status)
 VALUES (
     'admin',
     'Administrator',
@@ -6,7 +6,9 @@ VALUES (
     'https://example.com',
     'Default administrator account for initial setup.',
     20,
-    '$2y$12$niTRRVVdQ9bOOcK3m/amu.ihmlNYxVaWsEPgbuZskV7lKUo.NA4N2'
+    '$2y$12$niTRRVVdQ9bOOcK3m/amu.ihmlNYxVaWsEPgbuZskV7lKUo.NA4N2',
+    'admin',
+    'active'
 );
 
 INSERT INTO inquiry_sites (site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json)
@@ -35,7 +37,16 @@ VALUES
         'enable_keyword_check', true,
         'spam_keywords', JSON_ARRAY('seo service', 'buy backlinks', 'casino', 'viagra', 'crypto recovery'),
         'enable_disposable_email_domains', true,
-        'disposable_email_domains', JSON_ARRAY('mailinator.com', 'tempmail.com', '10minutemail.com', 'guerrillamail.com')
+        'disposable_email_domains', JSON_ARRAY('mailinator.com', 'tempmail.com', '10minutemail.com', 'guerrillamail.com'),
+        'enable_country_block', false,
+        'blocked_countries', JSON_ARRAY(),
+        'enable_name_keyword_check', false,
+        'blocked_name_keywords', JSON_ARRAY(),
+        'enable_company_keyword_check', false,
+        'blocked_company_keywords', JSON_ARRAY(),
+        'enable_content_length_check', false,
+        'content_min_length', 5,
+        'content_max_length', 5000
     )
 ),
 (
@@ -155,3 +166,12 @@ VALUES
 (2, 1, 'status_changed', 'Marked as read for demo data'),
 (NULL, 1, 'site_created', 'Seeded demo sites for local development'),
 (NULL, 1, 'email_notifications_updated', 'Seeded default notification settings for local development');
+
+
+INSERT INTO inquiry_followups (inquiry_id, admin_id, followup_type, content, next_contact_at, is_completed, completed_at) VALUES
+(1, 1, 'email', 'Sent sample catalog and promised DHL sample arrangement.', DATE_ADD(NOW(), INTERVAL 2 DAY), 0, NULL),
+(2, 1, 'call', 'Called customer and confirmed sample size request.', NULL, 1, NOW());
+
+INSERT INTO api_request_logs (site_key, site_id, endpoint, request_method, request_ip, origin_host, referer_host, response_status, result_code, result_message, request_headers_json, payload_json, response_json) VALUES
+('a_main', 1, '/api/v1/inquiries/submit', 'POST', '174.7.22.43', 'a.com', 'a.com', 201, 'unread', 'Inquiry received successfully.', JSON_OBJECT('Content-Type', 'application/json'), JSON_OBJECT('site_key', 'a_main', 'name', 'Matthew Pickering'), JSON_OBJECT('success', true)),
+('b_sample', 2, '/api/v1/inquiries/submit', 'POST', '174.7.22.44', 'b.com', 'b.com', 401, 'AUTH_INVALID', 'Invalid site credentials or inactive site.', JSON_OBJECT('Content-Type', 'application/json'), JSON_OBJECT('site_key', 'b_sample'), JSON_OBJECT('success', false));

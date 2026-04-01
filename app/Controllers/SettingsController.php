@@ -9,7 +9,6 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Models\Admin;
 
-
 final class SettingsController extends Controller
 {
     public function profile(): void
@@ -83,6 +82,8 @@ final class SettingsController extends Controller
             'username' => $updated['username'],
             'nickname' => $updated['nickname'] ?: $updated['username'],
             'email' => $updated['email'],
+            'role' => $updated['role'] ?? 'admin',
+            'status' => $updated['status'] ?? 'active',
         ];
 
         flash('success', 'Profile updated successfully.');

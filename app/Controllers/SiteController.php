@@ -14,6 +14,7 @@ final class SiteController extends Controller
 {
     public function index(): void
     {
+        if (!Auth::can('sites.view')) { flash('error', 'You do not have permission to access sites.'); redirect('dashboard'); }
         $siteModel = new Site();
 
         $this->view('dashboard/sites', [
@@ -29,7 +30,7 @@ final class SiteController extends Controller
 
     public function create(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('sites.view') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('sites');
         }
@@ -53,6 +54,7 @@ final class SiteController extends Controller
 
     public function edit(): void
     {
+        if (!Auth::can('sites.view')) { flash('error', 'You do not have permission to access sites.'); redirect('dashboard'); }
         $id = (int) ($_GET['id'] ?? 0);
         $site = (new Site())->findById($id);
 
@@ -72,7 +74,7 @@ final class SiteController extends Controller
 
     public function update(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('sites.view') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('sites');
         }
@@ -102,7 +104,7 @@ final class SiteController extends Controller
 
     public function rotateToken(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('sites.view') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('sites');
         }
@@ -129,7 +131,7 @@ final class SiteController extends Controller
 
     public function rotateSignatureSecret(): void
     {
-        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+        if (!Auth::can('sites.view') || !Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('sites');
         }

@@ -646,3 +646,24 @@ textarea.form-input {
 .mt-20 { margin-top: 20px; }
 .bulk-actions-bar .form-input { min-width: 180px; }
 .simple-list-item .split-header { align-items: flex-start; }
+
+.btn-linklike {
+    display: inline-block;
+    border: 0;
+    background: transparent;
+    color: var(--primary);
+    padding: 0;
+    cursor: pointer;
+}
+
+.bulk-toolbar {
+    align-items: end;
+}
+
+summary.btn-linklike {
+    list-style: none;
+}
+
+summary.btn-linklike::-webkit-details-marker {
+    display: none;
+}

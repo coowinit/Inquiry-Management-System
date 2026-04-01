@@ -25,6 +25,17 @@
             </label>
 
             <label class="form-label">
+                <span>Owner</span>
+                <select name="assigned_admin_id" class="form-input">
+                    <option value="">All owners</option>
+                    <option value="unassigned" <?= ($filters['assigned_admin_id'] ?? '') === 'unassigned' ? 'selected' : '' ?>>Unassigned</option>
+                    <?php foreach ($admins as $admin): ?>
+                        <option value="<?= (int) $admin['id'] ?>" <?= (string) ($filters['assigned_admin_id'] ?? '') === (string) $admin['id'] ? 'selected' : '' ?>><?= e($admin['nickname'] ?: $admin['username']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+
+            <label class="form-label">
                 <span>Has Note</span>
                 <select name="has_note" class="form-input">
                     <option value="">All</option>
@@ -56,12 +67,12 @@
             <div class="full-width export-box">
                 <div class="split-header mb-12">
                     <h3 class="section-mini-title">CSV Export Fields</h3>
-                    <a href="<?= e(url_with_query('inquiries/export')) ?>" class="btn">Export CSV</a>
+                    <a href="<?= e(url_with_query('inquiries/export', ['export_fields' => $selectedExportFields])) ?>" class="btn">Export CSV</a>
                 </div>
                 <div class="checkbox-grid">
                     <?php foreach ($allowedExportFields as $fieldKey => $expression): ?>
                         <label class="checkbox-row">
-                            <input type="checkbox" name="fields[]" value="<?= e($fieldKey) ?>" <?= in_array($fieldKey, $selectedExportFields, true) ? 'checked' : '' ?>>
+                            <input type="checkbox" name="export_fields[]" value="<?= e($fieldKey) ?>" <?= in_array($fieldKey, $selectedExportFields, true) ? 'checked' : '' ?>>
                             <span><?= e($fieldKey) ?></span>
                         </label>
                     <?php endforeach; ?>
@@ -71,20 +82,51 @@
     </div>
 </div>
 
-<div class="card">
+<form method="post" action="<?= e(base_url('inquiries/bulk')) ?>" class="card">
+    <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
     <div class="card-header split-header">
         <h2>Inquiry List</h2>
         <div class="muted">Total: <?= e((string) $pagination['total']) ?></div>
     </div>
+
+    <div class="card-body filter-grid bulk-toolbar">
+        <label class="form-label">
+            <span>Bulk Action</span>
+            <select id="bulkActionSelect" name="bulk_action" class="form-input">
+                <option value="">Choose an action</option>
+                <option value="mark_unread">Mark unread</option>
+                <option value="mark_read">Mark read</option>
+                <option value="mark_spam">Mark spam</option>
+                <option value="move_trash">Move to trash</option>
+                <option value="assign_selected">Assign owner</option>
+                <option value="clear_assignee">Clear owner</option>
+            </select>
+        </label>
+        <label class="form-label">
+            <span>Owner</span>
+            <select id="bulkAssigneeSelect" name="bulk_assigned_admin_id" class="form-input">
+                <option value="">Choose owner</option>
+                <?php foreach ($admins as $admin): ?>
+                    <option value="<?= (int) $admin['id'] ?>"><?= e($admin['nickname'] ?: $admin['username']) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Run Bulk Action</button>
+        </div>
+    </div>
+
     <div class="table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
+                    <th><input id="selectAllRows" type="checkbox"></th>
                     <th>ID</th>
                     <th>Inquiry</th>
                     <th>Contact</th>
                     <th>Site</th>
-                    <th>Source</th>
+                    <th>Owner</th>
+                    <th>Follow-ups</th>
                     <th>Note</th>
                     <th>Status</th>
                     <th>Submitted</th>
@@ -93,10 +135,11 @@
             </thead>
             <tbody>
                 <?php if (empty($pagination['data'])): ?>
-                    <tr><td colspan="9" class="empty-cell">No inquiries found.</td></tr>
+                    <tr><td colspan="11" class="empty-cell">No inquiries found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($pagination['data'] as $item): ?>
                         <tr>
+                            <td><input class="row-check" type="checkbox" name="ids[]" value="<?= (int) $item['id'] ?>"></td>
                             <td>#<?= e((string) $item['id']) ?></td>
                             <td>
                                 <div class="table-title"><?= e($item['title'] ?: 'No title') ?></div>
@@ -112,8 +155,11 @@
                                 <div class="table-sub"><?= e($item['form_key'] ?: '-') ?></div>
                             </td>
                             <td>
-                                <div class="table-sub"><?= e($item['ip'] ?: '-') ?></div>
-                                <div class="table-sub"><?= e($item['browser'] ?: '-') ?></div>
+                                <div class="table-title"><?= e(($item['assigned_nickname'] ?: $item['assigned_username']) ?: 'Unassigned') ?></div>
+                            </td>
+                            <td>
+                                <div class="table-title"><?= e((string) ($item['followup_count'] ?? 0)) ?></div>
+                                <div class="table-sub"><?= e((string) ($item['last_followup_at'] ?: '-')) ?></div>
                             </td>
                             <td>
                                 <?php if (!empty($item['admin_note'])): ?>
@@ -123,9 +169,7 @@
                                 <?php endif; ?>
                             </td>
                             <td><span class="status-badge status-<?= e($item['status']) ?>"><?= e(ucfirst((string) $item['status'])) ?></span></td>
-                            <td>
-                                <div class="table-sub"><?= e((string) $item['created_at']) ?></div>
-                            </td>
+                            <td><div class="table-sub"><?= e((string) $item['created_at']) ?></div></td>
                             <td>
                                 <div class="inline-form">
                                     <a href="<?= e(base_url('inquiry?id=' . (int) $item['id'])) ?>" class="btn btn-sm">View</a>
@@ -152,10 +196,8 @@
     <?php if (($pagination['total_pages'] ?? 1) > 1): ?>
         <div class="pagination">
             <?php for ($i = 1; $i <= (int) $pagination['total_pages']; $i++): ?>
-                <a class="page-link <?= $i === (int) $pagination['page'] ? 'is-active' : '' ?>" href="<?= e(url_with_query('inquiries', ['page' => $i])) ?>">
-                    <?= e((string) $i) ?>
-                </a>
+                <a class="page-link <?= $i === (int) $pagination['page'] ? 'is-active' : '' ?>" href="<?= e(url_with_query('inquiries', ['page' => $i])) ?>"><?= e((string) $i) ?></a>
             <?php endfor; ?>
         </div>
     <?php endif; ?>
-</div>
+</form>

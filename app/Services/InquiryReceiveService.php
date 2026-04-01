@@ -156,6 +156,47 @@ final class InquiryReceiveService
             }
         }
 
+        if (!empty($rules['enable_country_block'])) {
+            $countryValue = strtolower(trim((string) ($payload['country'] ?? '')));
+            if ($countryValue !== '' && in_array($countryValue, $rules['blocked_countries'] ?? [], true)) {
+                $reasonBag[] = 'blocked_country';
+            }
+        }
+
+        if (!empty($rules['enable_name_keyword_check'])) {
+            $nameValue = strtolower($name);
+            foreach (($rules['blocked_name_keywords'] ?? []) as $keyword) {
+                $keyword = strtolower(trim((string) $keyword));
+                if ($keyword !== '' && str_contains($nameValue, $keyword)) {
+                    $reasonBag[] = 'blocked_name_keyword:' . $keyword;
+                    break;
+                }
+            }
+        }
+
+        if (!empty($rules['enable_company_keyword_check'])) {
+            $companyValue = strtolower(trim((string) ($payload['from_company'] ?? '')));
+            foreach (($rules['blocked_company_keywords'] ?? []) as $keyword) {
+                $keyword = strtolower(trim((string) $keyword));
+                if ($keyword !== '' && str_contains($companyValue, $keyword)) {
+                    $reasonBag[] = 'blocked_company_keyword:' . $keyword;
+                    break;
+                }
+            }
+        }
+
+        if (!empty($rules['enable_content_length_check'])) {
+            $contentLength = mb_strlen($content);
+            $minLen = max(1, (int) ($rules['content_min_length'] ?? 5));
+            $maxLen = max($minLen, (int) ($rules['content_max_length'] ?? 5000));
+            if ($contentLength < $minLen) {
+                $reasonBag[] = 'content_too_short';
+            }
+            if ($contentLength > $maxLen) {
+                $reasonBag[] = 'content_too_long';
+            }
+        }
+
         $extraData = $this->collectExtraData($payload);
         if ($payload !== $rawPayload) {
             $extraData['_mapped_payload'] = $payload;

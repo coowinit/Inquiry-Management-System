@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS admins (
     bio TEXT DEFAULT NULL,
     page_size INT UNSIGNED NOT NULL DEFAULT 20,
     password_hash VARCHAR(255) NOT NULL,
+    role ENUM('admin','manager','agent','viewer') NOT NULL DEFAULT 'admin',
+    status ENUM('active','disabled') NOT NULL DEFAULT 'active',
+    last_login_at DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -116,8 +119,33 @@ CREATE TABLE IF NOT EXISTS inquiry_followups (
     content TEXT NOT NULL,
     next_contact_at DATETIME DEFAULT NULL,
     is_completed TINYINT(1) NOT NULL DEFAULT 0,
+    completed_at DATETIME DEFAULT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_followup_inquiry_id (inquiry_id),
     INDEX idx_followup_admin_id (admin_id),
     INDEX idx_followup_next_contact_at (next_contact_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS api_request_logs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    site_key VARCHAR(80) DEFAULT NULL,
+    site_id INT UNSIGNED DEFAULT NULL,
+    endpoint VARCHAR(255) NOT NULL,
+    request_method VARCHAR(10) NOT NULL DEFAULT 'POST',
+    request_ip VARCHAR(45) DEFAULT NULL,
+    origin_host VARCHAR(255) DEFAULT NULL,
+    referer_host VARCHAR(255) DEFAULT NULL,
+    response_status INT NOT NULL,
+    result_code VARCHAR(120) DEFAULT NULL,
+    result_message VARCHAR(500) DEFAULT NULL,
+    request_headers_json JSON DEFAULT NULL,
+    payload_json JSON DEFAULT NULL,
+    response_json JSON DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_api_site_id (site_id),
+    INDEX idx_api_site_key (site_key),
+    INDEX idx_api_response_status (response_status),
+    INDEX idx_api_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

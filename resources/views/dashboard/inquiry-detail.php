@@ -43,6 +43,7 @@
         <div class="content-box"><?= nl2br(e($inquiry['content'] ?: '-')) ?></div>
     </div>
 
+    <?php if ($canUpdate): ?>
     <div class="detail-grid mt-20">
         <div class="detail-section">
             <h2>Owner & Status Actions</h2>
@@ -90,8 +91,10 @@
             </form>
         </div>
     </div>
+    <?php endif; ?>
 
     <div class="detail-grid mt-20">
+        <?php if ($canUpdate): ?>
         <div class="detail-section">
             <h2>Add Follow-up Record</h2>
             <form method="post" action="<?= e(base_url('inquiry/followup')) ?>" class="form-grid">
@@ -104,6 +107,7 @@
                 <button type="submit" class="btn btn-primary">Add Follow-up</button>
             </form>
         </div>
+        <?php endif; ?>
 
         <div class="detail-section">
             <h2>Follow-up History</h2>
@@ -116,7 +120,32 @@
                             <div class="split-header"><div class="simple-list-title"><?= e(ucfirst((string) $followup['followup_type'])) ?></div><span class="<?= !empty($followup['is_completed']) ? 'badge-success' : 'badge-neutral' ?>"><?= !empty($followup['is_completed']) ? 'Completed' : 'Open' ?></span></div>
                             <div class="simple-list-meta"><?= e($followup['admin_nickname'] ?: $followup['admin_username'] ?: 'System') ?> · <?= e((string) $followup['created_at']) ?></div>
                             <?php if (!empty($followup['next_contact_at'])): ?><div class="simple-list-meta mt-8">Next contact: <?= e((string) $followup['next_contact_at']) ?></div><?php endif; ?>
+                            <?php if (!empty($followup['completed_at'])): ?><div class="simple-list-meta mt-8">Completed at: <?= e((string) $followup['completed_at']) ?></div><?php endif; ?>
                             <div class="simple-list-meta mt-8"><?= nl2br(e((string) $followup['content'])) ?></div>
+                            <?php if ($canUpdate): ?>
+                                <details class="mt-12">
+                                    <summary class="btn btn-sm btn-linklike">Edit follow-up</summary>
+                                    <form method="post" action="<?= e(base_url('inquiry/followup/update')) ?>" class="form-grid mt-12">
+                                        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                                        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+                                        <input type="hidden" name="followup_id" value="<?= (int) $followup['id'] ?>">
+                                        <label class="form-label"><span>Type</span><select name="followup_type" class="form-input"><?php foreach (['note', 'email', 'call', 'meeting', 'todo', 'status'] as $type): ?><option value="<?= e($type) ?>" <?= $followup['followup_type'] === $type ? 'selected' : '' ?>><?= e(ucfirst($type)) ?></option><?php endforeach; ?></select></label>
+                                        <label class="form-label"><span>Next Contact At</span><input type="datetime-local" name="next_contact_at" class="form-input" value="<?= !empty($followup['next_contact_at']) ? e(date('Y-m-d\TH:i', strtotime((string) $followup['next_contact_at']))) : '' ?>"></label>
+                                        <label class="form-label checkbox-label full-width"><span>Progress</span><label class="checkbox-row"><input type="checkbox" name="is_completed" value="1" <?= !empty($followup['is_completed']) ? 'checked' : '' ?>> Mark this follow-up as completed</label></label>
+                                        <label class="form-label full-width"><span>Follow-up Content</span><textarea name="content" class="form-input" rows="5"><?= e((string) $followup['content']) ?></textarea></label>
+                                        <div class="inline-form mt-8">
+                                            <button type="submit" class="btn btn-primary btn-sm">Save Follow-up</button>
+                                        </div>
+                                    </form>
+                                    <form method="post" action="<?= e(base_url('inquiry/followup/toggle')) ?>" class="inline-form mt-8">
+                                        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                                        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+                                        <input type="hidden" name="followup_id" value="<?= (int) $followup['id'] ?>">
+                                        <input type="hidden" name="complete" value="<?= !empty($followup['is_completed']) ? '0' : '1' ?>">
+                                        <button type="submit" class="btn btn-sm"><?= !empty($followup['is_completed']) ? 'Reopen' : 'Mark Completed' ?></button>
+                                    </form>
+                                </details>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

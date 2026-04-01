@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Api;
 
 use App\Core\Controller;
+use App\Models\ApiRequestLog;
 use App\Services\InquiryReceiveService;
 
 final class InquiryApiController extends Controller
@@ -34,8 +35,7 @@ final class InquiryApiController extends Controller
             }
         }
 
-        $service = new InquiryReceiveService();
-        $result = $service->handle($payload, [
+        $meta = [
             'request_ip' => request_ip(),
             'origin_host' => request_origin_host(),
             'referer_host' => request_referer_host(),
@@ -47,6 +47,31 @@ final class InquiryApiController extends Controller
             'raw_body' => request_raw_body(),
             'signature' => request_header('X-Signature'),
             'timestamp' => request_header('X-Timestamp'),
+        ];
+
+        $service = new InquiryReceiveService();
+        $result = $service->handle($payload, $meta);
+
+        (new ApiRequestLog())->create([
+            'site_key' => trim((string) ($payload['site_key'] ?? '')),
+            'site_id' => $result['body']['data']['site']['id'] ?? null,
+            'endpoint' => request_path(),
+            'request_method' => $_SERVER['REQUEST_METHOD'] ?? 'POST',
+            'request_ip' => $meta['request_ip'],
+            'origin_host' => $meta['origin_host'],
+            'referer_host' => $meta['referer_host'],
+            'response_status' => $result['status_code'],
+            'result_code' => $result['body']['error']['code'] ?? ($result['body']['data']['status'] ?? 'ok'),
+            'result_message' => $result['body']['error']['message'] ?? ($result['body']['message'] ?? ''),
+            'request_headers_json' => json_encode([
+                'Origin' => request_header('Origin'),
+                'Content-Type' => request_header('Content-Type'),
+                'X-Signature' => request_header('X-Signature') ? '[provided]' : null,
+                'X-Timestamp' => request_header('X-Timestamp'),
+                'User-Agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'payload_json' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'response_json' => json_encode($result['body'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ]);
 
         json_response($result['body'], $result['status_code']);

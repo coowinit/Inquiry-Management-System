@@ -12,6 +12,7 @@ final class LogController extends Controller
 {
     public function index(): void
     {
+        if (!Auth::can('logs.view')) { flash('error', 'You do not have permission to access system logs.'); redirect('dashboard'); }
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $user = Auth::user();
         $perPage = max(20, min(100, (int) ($user['page_size'] ?? 20)));

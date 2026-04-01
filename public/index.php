@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/../bootstrap/app.php';
 
+use App\Controllers\AdminController;
 use App\Controllers\Api\InquiryApiController;
+use App\Controllers\ApiLogController;
 use App\Controllers\AuthController;
 use App\Controllers\DashboardController;
 use App\Controllers\InquiryController;
@@ -37,6 +39,8 @@ $router->post('/inquiry/status', [InquiryController::class, 'updateStatus'], tru
 $router->post('/inquiry/note', [InquiryController::class, 'updateNote'], true);
 $router->post('/inquiry/assign', [InquiryController::class, 'assign'], true);
 $router->post('/inquiry/followup', [InquiryController::class, 'addFollowup'], true);
+$router->post('/inquiry/followup/update', [InquiryController::class, 'updateFollowup'], true);
+$router->post('/inquiry/followup/toggle', [InquiryController::class, 'toggleFollowup'], true);
 $router->post('/inquiries/bulk', [InquiryController::class, 'bulkUpdate'], true);
 $router->get('/inquiries/export', [InquiryController::class, 'exportCsv'], true);
 
@@ -47,7 +51,12 @@ $router->post('/sites/update', [SiteController::class, 'update'], true);
 $router->post('/sites/rotate-token', [SiteController::class, 'rotateToken'], true);
 $router->post('/sites/rotate-signature-secret', [SiteController::class, 'rotateSignatureSecret'], true);
 
+$router->get('/admins', [AdminController::class, 'index'], true);
+$router->post('/admins/create', [AdminController::class, 'create'], true);
+$router->post('/admins/update-meta', [AdminController::class, 'updateMeta'], true);
+
 $router->get('/logs', [LogController::class, 'index'], true);
+$router->get('/api-logs', [ApiLogController::class, 'index'], true);
 
 $router->get('/tools/blacklist-ips', [ToolsController::class, 'blacklistIps'], true);
 $router->post('/tools/blacklist-ips', [ToolsController::class, 'addBlacklistIp'], true);

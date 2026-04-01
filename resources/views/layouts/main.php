@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body>
+<?php $authUser = \App\Core\Auth::user(); ?>
 <div class="app-shell">
     <aside class="sidebar">
         <div class="sidebar-brand">
@@ -17,15 +18,28 @@
         <nav class="sidebar-nav">
             <div class="nav-group-title">Main</div>
             <a href="<?= e(base_url('dashboard')) ?>" class="nav-link <?= request_path() === '/dashboard' ? 'is-active' : '' ?>">Dashboard</a>
+            <a href="<?= e(base_url('reports/stats')) ?>" class="nav-link <?= request_path() === '/reports/stats' ? 'is-active' : '' ?>">Reports & Analytics</a>
             <a href="<?= e(base_url('inquiries')) ?>" class="nav-link <?= request_path() === '/inquiries' || request_path() === '/inquiry' ? 'is-active' : '' ?>">Inquiry Management</a>
-            <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' || request_path() === '/sites/edit' ? 'is-active' : '' ?>">Sites & API</a>
-            <a href="<?= e(base_url('logs')) ?>" class="nav-link <?= request_path() === '/logs' ? 'is-active' : '' ?>">System Logs</a>
+            <?php if (\App\Core\Auth::can('sites.view')): ?>
+                <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' || request_path() === '/sites/edit' ? 'is-active' : '' ?>">Sites & API</a>
+            <?php endif; ?>
+            <?php if (\App\Core\Auth::can('tools.view')): ?>
+                <a href="<?= e(base_url('admins')) ?>" class="nav-link <?= request_path() === '/admins' ? 'is-active' : '' ?>">Admin Users</a>
+            <?php endif; ?>
+            <?php if (\App\Core\Auth::can('logs.view')): ?>
+                <a href="<?= e(base_url('logs')) ?>" class="nav-link <?= request_path() === '/logs' ? 'is-active' : '' ?>">System Logs</a>
+            <?php endif; ?>
+            <?php if (\App\Core\Auth::can('api_logs.view')): ?>
+                <a href="<?= e(base_url('api-logs')) ?>" class="nav-link <?= request_path() === '/api-logs' ? 'is-active' : '' ?>">API Request Logs</a>
+            <?php endif; ?>
 
-            <div class="nav-group-title">Tools</div>
-            <a href="<?= e(base_url('tools/blacklist-ips')) ?>" class="nav-link <?= request_path() === '/tools/blacklist-ips' ? 'is-active' : '' ?>">Blocked IPs</a>
-            <a href="<?= e(base_url('tools/blacklist-emails')) ?>" class="nav-link <?= request_path() === '/tools/blacklist-emails' ? 'is-active' : '' ?>">Blocked Emails</a>
-            <a href="<?= e(base_url('tools/spam-rules')) ?>" class="nav-link <?= request_path() === '/tools/spam-rules' ? 'is-active' : '' ?>">Spam Rule Center</a>
-            <a href="<?= e(base_url('tools/email-notifications')) ?>" class="nav-link <?= request_path() === '/tools/email-notifications' ? 'is-active' : '' ?>">Email Notifications</a>
+            <?php if (\App\Core\Auth::can('tools.view')): ?>
+                <div class="nav-group-title">Tools</div>
+                <a href="<?= e(base_url('tools/blacklist-ips')) ?>" class="nav-link <?= request_path() === '/tools/blacklist-ips' ? 'is-active' : '' ?>">Blocked IPs</a>
+                <a href="<?= e(base_url('tools/blacklist-emails')) ?>" class="nav-link <?= request_path() === '/tools/blacklist-emails' ? 'is-active' : '' ?>">Blocked Emails</a>
+                <a href="<?= e(base_url('tools/spam-rules')) ?>" class="nav-link <?= request_path() === '/tools/spam-rules' ? 'is-active' : '' ?>">Spam Rule Center</a>
+                <a href="<?= e(base_url('tools/email-notifications')) ?>" class="nav-link <?= request_path() === '/tools/email-notifications' ? 'is-active' : '' ?>">Email Notifications</a>
+            <?php endif; ?>
 
             <div class="nav-group-title">Settings</div>
             <a href="<?= e(base_url('profile')) ?>" class="nav-link <?= request_path() === '/profile' ? 'is-active' : '' ?>">My Profile</a>
@@ -39,8 +53,7 @@
                 <h1 class="page-title"><?= e($pageTitle ?? '') ?></h1>
             </div>
             <div class="topbar-user">
-                <?php $authUser = \App\Core\Auth::user(); ?>
-                <span><?= e($authUser['nickname'] ?? $authUser['username'] ?? 'Admin') ?></span>
+                <span><?= e(($authUser['nickname'] ?? $authUser['username'] ?? 'Admin') . ' · ' . strtoupper((string) ($authUser['role'] ?? 'admin'))) ?></span>
             </div>
         </header>
 

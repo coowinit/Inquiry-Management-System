@@ -17,6 +17,7 @@ final class ToolsController extends Controller
 {
     public function blacklistIps(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         $model = new BlacklistIp();
 
         $this->view('dashboard/blacklist-ips', [
@@ -28,6 +29,7 @@ final class ToolsController extends Controller
 
     public function addBlacklistIp(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/blacklist-ips');
@@ -55,6 +57,7 @@ final class ToolsController extends Controller
 
     public function deleteBlacklistIp(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/blacklist-ips');
@@ -80,6 +83,7 @@ final class ToolsController extends Controller
 
     public function blacklistEmails(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         $this->view('dashboard/blacklist-emails', [
             'pageTitle' => 'Blocked Emails & Domains',
             'items' => (new BlacklistEmail())->all(),
@@ -89,6 +93,7 @@ final class ToolsController extends Controller
 
     public function addBlacklistEmail(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/blacklist-emails');
@@ -126,6 +131,7 @@ final class ToolsController extends Controller
 
     public function deleteBlacklistEmail(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/blacklist-emails');
@@ -151,6 +157,7 @@ final class ToolsController extends Controller
 
     public function spamRules(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         $this->view('dashboard/spam-rules', [
             'pageTitle' => 'Spam Rule Center',
             'rules' => (new SpamRuleService())->getRules(),
@@ -160,6 +167,7 @@ final class ToolsController extends Controller
 
     public function updateSpamRules(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/spam-rules');
@@ -179,6 +187,7 @@ final class ToolsController extends Controller
 
     public function emailNotifications(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         $this->view('dashboard/email-notifications', [
             'pageTitle' => 'Email Notifications',
             'settings' => (new EmailNotificationService())->getSettings(),
@@ -188,6 +197,7 @@ final class ToolsController extends Controller
 
     public function updateEmailNotifications(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/email-notifications');
@@ -207,6 +217,7 @@ final class ToolsController extends Controller
 
     public function testEmailNotifications(): void
     {
+        if (!Auth::can('tools.view')) { flash('error', 'You do not have permission to access tools.'); redirect('dashboard'); }
         if (!Csrf::verify($_POST['_csrf'] ?? null)) {
             flash('error', 'Invalid request token.');
             redirect('tools/email-notifications');
