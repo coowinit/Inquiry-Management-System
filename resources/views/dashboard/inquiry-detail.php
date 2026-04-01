@@ -16,6 +16,21 @@
     </div>
 </div>
 
+<div class="card mb-20">
+    <div class="card-header"><h2>Admin Note</h2></div>
+    <div class="card-body">
+        <form method="post" action="<?= e(base_url('inquiry/note')) ?>">
+            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+            <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+            <label class="form-label full-width">
+                <span>Internal note for follow-up</span>
+                <textarea name="admin_note" class="form-input" rows="5" placeholder="Add your follow-up note, summary, or risk judgment here..."><?= e((string) ($inquiry['admin_note'] ?? '')) ?></textarea>
+            </label>
+            <button type="submit" class="btn btn-primary">Save Note</button>
+        </form>
+    </div>
+</div>
+
 <div class="card detail-card">
     <div class="detail-grid">
         <div class="detail-section">
@@ -83,9 +98,7 @@
                         <div class="simple-list-item compact-item">
                             <div class="simple-list-title"><?= e($log['action']) ?></div>
                             <div class="simple-list-meta"><?= e($log['admin_nickname'] ?: $log['admin_username'] ?: 'System') ?> · <?= e((string) $log['created_at']) ?></div>
-                            <?php if (!empty($log['action_note'])): ?>
-                                <div class="simple-list-meta mt-8"><?= e($log['action_note']) ?></div>
-                            <?php endif; ?>
+                            <?php if (!empty($log['action_note'])): ?><div class="simple-list-meta mt-8"><?= e($log['action_note']) ?></div><?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

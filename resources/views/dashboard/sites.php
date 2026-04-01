@@ -8,6 +8,8 @@
         <pre class="code-box"><?= e($apiEndpoint) ?></pre>
         <p class="muted mt-16 mb-12">Signed request format</p>
         <pre class="code-box">signature = HMAC_SHA256(X-Timestamp + "\n" + raw_body, signature_secret)</pre>
+        <p class="muted mt-16 mb-12">Field mapping example</p>
+        <pre class="code-box"><?= e($mappingExample) ?></pre>
     </div>
 </div>
 
@@ -58,6 +60,11 @@
             </label>
 
             <label class="form-label full-width">
+                <span>Field Mapping JSON</span>
+                <textarea name="field_mapping_json" class="form-input" rows="8" placeholder="<?= e($mappingExample) ?>"></textarea>
+            </label>
+
+            <label class="form-label full-width">
                 <span>Notes</span>
                 <textarea name="notes" class="form-input" rows="4" placeholder="Optional notes for this site"></textarea>
             </label>
@@ -83,6 +90,7 @@
                     <th>Domain</th>
                     <th>Site Key</th>
                     <th>Mode</th>
+                    <th>Mapping</th>
                     <th>Stats</th>
                     <th>Last Inquiry</th>
                     <th>Actions</th>
@@ -91,10 +99,11 @@
             <tbody>
                 <?php if (empty($sites)): ?>
                     <tr>
-                        <td colspan="8" class="empty-cell">No sites found.</td>
+                        <td colspan="9" class="empty-cell">No sites found.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($sites as $site): ?>
+                        <?php $hasMapping = !empty($site['field_mapping_json']); ?>
                         <tr>
                             <td>#<?= e((string) $site['id']) ?></td>
                             <td>
@@ -103,17 +112,14 @@
                             </td>
                             <td><?= e($site['site_domain']) ?></td>
                             <td><code><?= e($site['site_key']) ?></code></td>
-                            <td>
-                                <?= (int) ($site['require_signature'] ?? 0) === 1 ? 'Signed + Token' : 'Token Only' ?>
-                            </td>
+                            <td><?= (int) ($site['require_signature'] ?? 0) === 1 ? 'Signed + Token' : 'Token Only' ?></td>
+                            <td><?= $hasMapping ? 'Custom JSON' : 'Default' ?></td>
                             <td>
                                 <div class="table-sub"><?= e((string) ($site['inquiry_total'] ?? 0)) ?> total</div>
                                 <div class="table-sub"><?= e((string) ($site['unread_total'] ?? 0)) ?> unread</div>
                             </td>
                             <td><?= e((string) ($site['last_inquiry_at'] ?: '-')) ?></td>
-                            <td>
-                                <a href="<?= e(base_url('sites/edit?id=' . (int) $site['id'])) ?>" class="btn btn-sm">Edit</a>
-                            </td>
+                            <td><a href="<?= e(base_url('sites/edit?id=' . (int) $site['id'])) ?>" class="btn btn-sm">Edit</a></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>

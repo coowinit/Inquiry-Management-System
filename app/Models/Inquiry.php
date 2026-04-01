@@ -224,6 +224,15 @@ final class Inquiry
         ]);
     }
 
+    public function updateNote(int $id, ?string $note): bool
+    {
+        $stmt = Database::connection()->prepare('UPDATE inquiries SET admin_note = :note, updated_at = NOW() WHERE id = :id');
+        return $stmt->execute([
+            'note' => $note,
+            'id' => $id,
+        ]);
+    }
+
     private function buildWhere(array $filters): array
     {
         $clauses = [];
@@ -250,8 +259,16 @@ final class Inquiry
         }
 
         if (!empty($filters['keyword'])) {
-            $clauses[] = '(i.title LIKE :keyword OR i.content LIKE :keyword OR i.name LIKE :keyword OR i.email LIKE :keyword OR i.from_company LIKE :keyword)';
+            $clauses[] = '(i.title LIKE :keyword OR i.content LIKE :keyword OR i.name LIKE :keyword OR i.email LIKE :keyword OR i.from_company LIKE :keyword OR i.admin_note LIKE :keyword)';
             $bindings['keyword'] = '%' . $filters['keyword'] . '%';
+        }
+
+        if (($filters['has_note'] ?? '') === 'yes') {
+            $clauses[] = 'i.admin_note IS NOT NULL AND i.admin_note <> ""';
+        }
+
+        if (($filters['has_note'] ?? '') === 'no') {
+            $clauses[] = '(i.admin_note IS NULL OR i.admin_note = "")';
         }
 
         $whereSql = '';

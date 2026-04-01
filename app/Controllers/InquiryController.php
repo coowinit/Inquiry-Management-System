@@ -104,6 +104,33 @@ final class InquiryController extends Controller
         redirect($back);
     }
 
+    public function updateNote(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('inquiries');
+        }
+
+        $id = (int) ($_POST['id'] ?? 0);
+        $note = trim((string) ($_POST['admin_note'] ?? ''));
+
+        if ($id <= 0) {
+            flash('error', 'Invalid inquiry id.');
+            redirect('inquiries');
+        }
+
+        $updated = (new Inquiry())->updateNote($id, $note !== '' ? $note : null);
+
+        if ($updated) {
+            (new InquiryLog())->create($id, Auth::id(), 'note_updated', $note !== '' ? 'Updated admin note' : 'Cleared admin note');
+            flash('success', 'Admin note saved successfully.');
+        } else {
+            flash('error', 'Unable to save admin note.');
+        }
+
+        redirect('inquiry?id=' . $id);
+    }
+
     public function exportCsv(): void
     {
         $filters = $this->collectFilters();
@@ -131,6 +158,7 @@ final class InquiryController extends Controller
             'keyword' => trim((string) ($_GET['keyword'] ?? '')),
             'date_from' => trim((string) ($_GET['date_from'] ?? '')),
             'date_to' => trim((string) ($_GET['date_to'] ?? '')),
+            'has_note' => trim((string) ($_GET['has_note'] ?? '')),
         ];
 
         if ($filters['site_id'] === 0) {

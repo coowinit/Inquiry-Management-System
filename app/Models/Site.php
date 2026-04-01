@@ -26,51 +26,37 @@ final class Site
                 LEFT JOIN inquiries i ON i.site_id = s.id
                 GROUP BY s.id
                 ORDER BY s.id DESC';
-
         return Database::connection()->query($sql)->fetchAll();
-    }
-
-    public function findById(int $id): array|false
-    {
-        $sql = 'SELECT * FROM inquiry_sites WHERE id = :id LIMIT 1';
-        $stmt = Database::connection()->prepare($sql);
-        $stmt->execute(['id' => $id]);
-        return $stmt->fetch();
     }
 
     public function findByCredentials(string $siteKey, string $apiToken): array|false
     {
-        $sql = 'SELECT * FROM inquiry_sites WHERE site_key = :site_key AND api_token = :api_token AND status = :status LIMIT 1';
-        $stmt = Database::connection()->prepare($sql);
+        $stmt = Database::connection()->prepare('SELECT * FROM inquiry_sites WHERE site_key = :site_key AND api_token = :api_token AND status = "active" LIMIT 1');
         $stmt->execute([
             'site_key' => $siteKey,
             'api_token' => $apiToken,
-            'status' => 'active',
         ]);
+        return $stmt->fetch();
+    }
 
+    public function findById(int $id): array|false
+    {
+        $stmt = Database::connection()->prepare('SELECT * FROM inquiry_sites WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
 
     public function create(array $data): bool
     {
-        try {
-            $sql = 'INSERT INTO inquiry_sites (
-                        site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes
-                    ) VALUES (
-                        :site_name, :site_domain, :site_key, :api_token, :signature_secret, :require_signature, :status, :notes
-                    )';
-            $stmt = Database::connection()->prepare($sql);
+        $sql = 'INSERT INTO inquiry_sites (
+                    site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json
+                ) VALUES (
+                    :site_name, :site_domain, :site_key, :api_token, :signature_secret, :require_signature, :status, :notes, :field_mapping_json
+                )';
 
-            return $stmt->execute([
-                'site_name' => $data['site_name'],
-                'site_domain' => $data['site_domain'],
-                'site_key' => $data['site_key'],
-                'api_token' => $data['api_token'],
-                'signature_secret' => $data['signature_secret'],
-                'require_signature' => $data['require_signature'],
-                'status' => $data['status'],
-                'notes' => $data['notes'],
-            ]);
+        try {
+            $stmt = Database::connection()->prepare($sql);
+            return $stmt->execute($data);
         } catch (PDOException) {
             return false;
         }
@@ -78,18 +64,19 @@ final class Site
 
     public function update(int $id, array $data): bool
     {
-        try {
-            $sql = 'UPDATE inquiry_sites
-                    SET site_name = :site_name,
-                        site_domain = :site_domain,
-                        site_key = :site_key,
-                        require_signature = :require_signature,
-                        status = :status,
-                        notes = :notes,
-                        updated_at = NOW()
-                    WHERE id = :id';
-            $stmt = Database::connection()->prepare($sql);
+        $sql = 'UPDATE inquiry_sites SET
+                    site_name = :site_name,
+                    site_domain = :site_domain,
+                    site_key = :site_key,
+                    require_signature = :require_signature,
+                    status = :status,
+                    notes = :notes,
+                    field_mapping_json = :field_mapping_json,
+                    updated_at = NOW()
+                WHERE id = :id';
 
+        try {
+            $stmt = Database::connection()->prepare($sql);
             return $stmt->execute([
                 'site_name' => $data['site_name'],
                 'site_domain' => $data['site_domain'],
@@ -97,6 +84,7 @@ final class Site
                 'require_signature' => $data['require_signature'],
                 'status' => $data['status'],
                 'notes' => $data['notes'],
+                'field_mapping_json' => $data['field_mapping_json'],
                 'id' => $id,
             ]);
         } catch (PDOException) {
@@ -104,24 +92,20 @@ final class Site
         }
     }
 
-    public function rotateApiToken(int $id, string $apiToken): bool
+    public function rotateToken(int $id, string $token): bool
     {
-        $sql = 'UPDATE inquiry_sites SET api_token = :api_token, updated_at = NOW() WHERE id = :id';
-        $stmt = Database::connection()->prepare($sql);
-
+        $stmt = Database::connection()->prepare('UPDATE inquiry_sites SET api_token = :token, updated_at = NOW() WHERE id = :id');
         return $stmt->execute([
-            'api_token' => $apiToken,
+            'token' => $token,
             'id' => $id,
         ]);
     }
 
     public function rotateSignatureSecret(int $id, string $secret): bool
     {
-        $sql = 'UPDATE inquiry_sites SET signature_secret = :signature_secret, updated_at = NOW() WHERE id = :id';
-        $stmt = Database::connection()->prepare($sql);
-
+        $stmt = Database::connection()->prepare('UPDATE inquiry_sites SET signature_secret = :secret, updated_at = NOW() WHERE id = :id');
         return $stmt->execute([
-            'signature_secret' => $secret,
+            'secret' => $secret,
             'id' => $id,
         ]);
     }
@@ -132,17 +116,19 @@ final class Site
             return true;
         }
 
-        $configuredHost = strtolower(trim((string) ($site['site_domain'] ?? '')));
+        $siteDomain = strtolower(trim((string) ($site['site_domain'] ?? '')));
         $host = strtolower(trim($host));
 
-        if ($configuredHost === '') {
+        if ($siteDomain === '') {
             return true;
         }
 
-        if ($host === $configuredHost) {
-            return true;
-        }
+        return $host === $siteDomain || str_ends_with($host, '.' . $siteDomain);
+    }
 
-        return str_ends_with($host, '.' . $configuredHost);
+    public function fieldMapping(array $site): array
+    {
+        $mapping = json_decode((string) ($site['field_mapping_json'] ?? ''), true);
+        return is_array($mapping) ? $mapping : [];
     }
 }

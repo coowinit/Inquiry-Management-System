@@ -19,10 +19,17 @@
                 <select name="site_id" class="form-input">
                     <option value="">All sites</option>
                     <?php foreach ($sites as $site): ?>
-                        <option value="<?= (int) $site['id'] ?>" <?= (int) ($filters['site_id'] ?? 0) === (int) $site['id'] ? 'selected' : '' ?>>
-                            <?= e($site['site_name']) ?>
-                        </option>
+                        <option value="<?= (int) $site['id'] ?>" <?= (int) ($filters['site_id'] ?? 0) === (int) $site['id'] ? 'selected' : '' ?>><?= e($site['site_name']) ?></option>
                     <?php endforeach; ?>
+                </select>
+            </label>
+
+            <label class="form-label">
+                <span>Has Note</span>
+                <select name="has_note" class="form-input">
+                    <option value="">All</option>
+                    <option value="yes" <?= ($filters['has_note'] ?? '') === 'yes' ? 'selected' : '' ?>>With note</option>
+                    <option value="no" <?= ($filters['has_note'] ?? '') === 'no' ? 'selected' : '' ?>>Without note</option>
                 </select>
             </label>
 
@@ -38,7 +45,7 @@
 
             <label class="form-label full-width">
                 <span>Keyword</span>
-                <input type="text" name="keyword" class="form-input" value="<?= e((string) ($filters['keyword'] ?? '')) ?>" placeholder="Search title, content, name, email, company...">
+                <input type="text" name="keyword" class="form-input" value="<?= e((string) ($filters['keyword'] ?? '')) ?>" placeholder="Search title, content, name, email, company or admin note...">
             </label>
 
             <div class="filter-actions full-width">
@@ -64,6 +71,7 @@
                     <th>Contact</th>
                     <th>Site</th>
                     <th>Source</th>
+                    <th>Note</th>
                     <th>Status</th>
                     <th>Submitted</th>
                     <th>Actions</th>
@@ -71,9 +79,7 @@
             </thead>
             <tbody>
                 <?php if (empty($pagination['data'])): ?>
-                    <tr>
-                        <td colspan="8" class="empty-cell">No inquiries found.</td>
-                    </tr>
+                    <tr><td colspan="9" class="empty-cell">No inquiries found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($pagination['data'] as $item): ?>
                         <tr>
@@ -85,9 +91,7 @@
                             <td>
                                 <div class="table-title"><?= e($item['name']) ?></div>
                                 <div class="table-sub"><?= e($item['email']) ?></div>
-                                <?php if (!empty($item['from_company'])): ?>
-                                    <div class="table-sub"><?= e($item['from_company']) ?></div>
-                                <?php endif; ?>
+                                <?php if (!empty($item['from_company'])): ?><div class="table-sub"><?= e($item['from_company']) ?></div><?php endif; ?>
                             </td>
                             <td>
                                 <div class="table-title"><?= e($item['site_name'] ?: '-') ?></div>
@@ -97,14 +101,12 @@
                                 <div class="table-sub"><?= e($item['ip'] ?: '-') ?></div>
                                 <div class="table-sub"><?= e($item['browser'] ?: '-') ?></div>
                             </td>
-                            <td>
-                                <span class="status-pill status-<?= e($item['status']) ?>"><?= e(ucfirst((string) $item['status'])) ?></span>
-                            </td>
+                            <td><?= !empty($item['admin_note']) ? 'Yes' : '-' ?></td>
+                            <td><span class="status-pill status-<?= e($item['status']) ?>"><?= e(ucfirst((string) $item['status'])) ?></span></td>
                             <td><?= e((string) $item['created_at']) ?></td>
                             <td>
                                 <div class="action-stack">
                                     <a href="<?= e(base_url('inquiry?id=' . (int) $item['id'])) ?>" class="btn btn-sm">View</a>
-
                                     <form method="post" action="<?= e(base_url('inquiry/status')) ?>" class="inline-form">
                                         <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
                                         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
@@ -128,9 +130,7 @@
     <?php if (($pagination['total_pages'] ?? 1) > 1): ?>
         <div class="pagination">
             <?php for ($i = 1; $i <= (int) $pagination['total_pages']; $i++): ?>
-                <a class="page-link <?= $i === (int) $pagination['page'] ? 'is-active' : '' ?>" href="<?= e(url_with_query('inquiries', ['page' => $i])) ?>">
-                    <?= e((string) $i) ?>
-                </a>
+                <a class="page-link <?= $i === (int) $pagination['page'] ? 'is-active' : '' ?>" href="<?= e(url_with_query('inquiries', ['page' => $i])) ?>"><?= e((string) $i) ?></a>
             <?php endfor; ?>
         </div>
     <?php endif; ?>

@@ -1,22 +1,10 @@
 <div class="detail-actions">
     <div class="actions-wrap">
         <a href="<?= e(base_url('sites')) ?>" class="btn">Back to Sites</a>
-
-        <form method="post" action="<?= e(base_url('sites/rotate-token')) ?>" class="inline-form">
-            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
-            <input type="hidden" name="id" value="<?= (int) $site['id'] ?>">
-            <button type="submit" class="btn">Rotate API Token</button>
-        </form>
-
-        <form method="post" action="<?= e(base_url('sites/rotate-signature-secret')) ?>" class="inline-form">
-            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
-            <input type="hidden" name="id" value="<?= (int) $site['id'] ?>">
-            <button type="submit" class="btn">Rotate Signature Secret</button>
-        </form>
     </div>
 </div>
 
-<div class="card form-card">
+<div class="card form-card mb-20">
     <div class="card-header">
         <h2>Edit Site</h2>
     </div>
@@ -54,13 +42,8 @@
         </label>
 
         <label class="form-label full-width">
-            <span>Current API Token</span>
-            <input type="text" class="form-input" value="<?= e($site['api_token']) ?>" readonly>
-        </label>
-
-        <label class="form-label full-width">
-            <span>Current Signature Secret</span>
-            <input type="text" class="form-input" value="<?= e($site['signature_secret'] ?: '-') ?>" readonly>
+            <span>Field Mapping JSON</span>
+            <textarea name="field_mapping_json" class="form-input" rows="10" placeholder="<?= e($mappingExample) ?>"><?= e((string) ($site['field_mapping_json'] ?? '')) ?></textarea>
         </label>
 
         <label class="form-label full-width">
@@ -72,4 +55,37 @@
             <button type="submit" class="btn btn-primary">Save Site</button>
         </div>
     </form>
+</div>
+
+<div class="card mb-20">
+    <div class="card-header"><h2>Current Secrets</h2></div>
+    <div class="card-body filter-grid">
+        <label class="form-label full-width">
+            <span>Current API Token</span>
+            <input type="text" class="form-input" value="<?= e($site['api_token']) ?>" readonly>
+        </label>
+        <form method="post" action="<?= e(base_url('sites/rotate-token')) ?>" class="full-width">
+            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+            <input type="hidden" name="id" value="<?= (int) $site['id'] ?>">
+            <label class="form-label full-width">
+                <span>Rotate API Token</span>
+                <input type="text" name="api_token" class="form-input" value="<?= e(random_token(32)) ?>" required>
+            </label>
+            <button type="submit" class="btn">Update API Token</button>
+        </form>
+
+        <label class="form-label full-width">
+            <span>Current Signature Secret</span>
+            <input type="text" class="form-input" value="<?= e($site['signature_secret'] ?: '-') ?>" readonly>
+        </label>
+        <form method="post" action="<?= e(base_url('sites/rotate-signature-secret')) ?>" class="full-width">
+            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+            <input type="hidden" name="id" value="<?= (int) $site['id'] ?>">
+            <label class="form-label full-width">
+                <span>Rotate Signature Secret</span>
+                <input type="text" name="signature_secret" class="form-input" value="<?= e(random_token(48)) ?>" required>
+            </label>
+            <button type="submit" class="btn">Update Signature Secret</button>
+        </form>
+    </div>
 </div>

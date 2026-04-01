@@ -9,11 +9,35 @@ VALUES (
     '$2y$12$niTRRVVdQ9bOOcK3m/amu.ihmlNYxVaWsEPgbuZskV7lKUo.NA4N2'
 );
 
-INSERT INTO inquiry_sites (site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes)
+INSERT INTO inquiry_sites (site_name, site_domain, site_key, api_token, signature_secret, require_signature, status, notes, field_mapping_json)
 VALUES
-('a.com Main Website', 'a.com', 'a_main', 'token_a_main_2026', 'sig_a_main_2026_secret_1234567890', 0, 'active', 'Primary official website'),
-('b.com Sample Website', 'b.com', 'b_sample', 'token_b_sample_2026', 'sig_b_sample_2026_secret_1234567890', 1, 'active', 'Sample request website with signed requests'),
-('c.com Distributor Website', 'c.com', 'c_distributor', 'token_c_distributor_2026', 'sig_c_distributor_2026_secret_1234567890', 0, 'active', 'Distributor recruitment website');
+('a.com Main Website', 'a.com', 'a_main', 'token_a_main_2026', 'sig_a_main_2026_secret_1234567890', 0, 'active', 'Primary official website', NULL),
+('b.com Sample Website', 'b.com', 'b_sample', 'token_b_sample_2026', 'sig_b_sample_2026_secret_1234567890', 1, 'active', 'Sample request website with signed requests', JSON_OBJECT('name', JSON_ARRAY('fullname'), 'email', JSON_ARRAY('user_email'), 'content', JSON_ARRAY('message'), 'from_company', JSON_ARRAY('company_name'))),
+('c.com Distributor Website', 'c.com', 'c_distributor', 'token_c_distributor_2026', 'sig_c_distributor_2026_secret_1234567890', 0, 'active', 'Distributor recruitment website', NULL);
+
+INSERT INTO system_settings (setting_key, setting_value)
+VALUES (
+    'spam_rules',
+    JSON_OBJECT(
+        'enable_honeypot', true,
+        'honeypot_field', 'website',
+        'enable_link_check', true,
+        'spam_link_threshold', 2,
+        'enable_duplicate_check', true,
+        'duplicate_window_minutes', 10,
+        'enable_ip_rate_limit', true,
+        'ip_rate_limit_window_minutes', 10,
+        'ip_rate_limit_max', 8,
+        'enable_email_rate_limit', true,
+        'email_rate_limit_window_minutes', 10,
+        'email_rate_limit_max', 5,
+        'enable_keyword_check', true,
+        'spam_keywords', JSON_ARRAY('seo service', 'buy backlinks', 'casino', 'viagra', 'crypto recovery'),
+        'enable_disposable_email_domains', true,
+        'disposable_email_domains', JSON_ARRAY('mailinator.com', 'tempmail.com', '10minutemail.com', 'guerrillamail.com')
+    )
+)
+ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW();
 
 INSERT INTO blacklist_ips (ip_address, reason)
 VALUES

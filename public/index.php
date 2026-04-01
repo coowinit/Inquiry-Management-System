@@ -32,6 +32,7 @@ $router->get('/dashboard', [DashboardController::class, 'index'], true);
 $router->get('/inquiries', [InquiryController::class, 'index'], true);
 $router->get('/inquiry', [InquiryController::class, 'show'], true);
 $router->post('/inquiry/status', [InquiryController::class, 'updateStatus'], true);
+$router->post('/inquiry/note', [InquiryController::class, 'updateNote'], true);
 $router->get('/inquiries/export', [InquiryController::class, 'exportCsv'], true);
 
 $router->get('/sites', [SiteController::class, 'index'], true);
@@ -46,6 +47,8 @@ $router->get('/logs', [LogController::class, 'index'], true);
 $router->get('/tools/blacklist-ips', [ToolsController::class, 'blacklistIps'], true);
 $router->post('/tools/blacklist-ips', [ToolsController::class, 'addBlacklistIp'], true);
 $router->post('/tools/blacklist-ips/delete', [ToolsController::class, 'deleteBlacklistIp'], true);
+$router->get('/tools/spam-rules', [ToolsController::class, 'spamRules'], true);
+$router->post('/tools/spam-rules', [ToolsController::class, 'updateSpamRules'], true);
 
 $router->get('/profile', [SettingsController::class, 'profile'], true);
 $router->post('/profile', [SettingsController::class, 'updateProfile'], true);

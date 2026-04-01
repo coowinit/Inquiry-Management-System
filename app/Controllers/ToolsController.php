@@ -9,6 +9,7 @@ use App\Core\Controller;
 use App\Core\Csrf;
 use App\Models\BlacklistIp;
 use App\Models\InquiryLog;
+use App\Services\SpamRuleService;
 
 final class ToolsController extends Controller
 {
@@ -73,5 +74,33 @@ final class ToolsController extends Controller
         }
 
         redirect('tools/blacklist-ips');
+    }
+
+    public function spamRules(): void
+    {
+        $this->view('dashboard/spam-rules', [
+            'pageTitle' => 'Spam Rule Center',
+            'rules' => (new SpamRuleService())->getRules(),
+            'csrfToken' => Csrf::token(),
+        ]);
+    }
+
+    public function updateSpamRules(): void
+    {
+        if (!Csrf::verify($_POST['_csrf'] ?? null)) {
+            flash('error', 'Invalid request token.');
+            redirect('tools/spam-rules');
+        }
+
+        $saved = (new SpamRuleService())->saveFromPost($_POST);
+
+        if ($saved) {
+            (new InquiryLog())->create(null, Auth::id(), 'spam_rules_updated', 'Updated spam rule center settings');
+            flash('success', 'Spam rules updated successfully.');
+        } else {
+            flash('error', 'Unable to save spam rules.');
+        }
+
+        redirect('tools/spam-rules');
     }
 }

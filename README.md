@@ -1,17 +1,16 @@
 # Inquiry Management System
 
-Version: **v0.3.0**
+Version: **v0.4.0**
 
 A pure PHP + MySQL inquiry management system for collecting inquiry forms from multiple websites into one centralized backend.
 
-## v0.3.0 Highlights
+## v0.4.0 Highlights
 
-- Site management now supports create, edit, and key rotation
-- Optional HMAC request signature verification per site
-- Inquiry CSV export is available from the inquiry list page
-- System log page is now available
-- Blocked IP entries can be removed in the backend
-- Health endpoint now returns the application version automatically
+- Added per-site **Field Mapping JSON** so different form field names can map into the system's standard fields
+- Added **Admin Note** editing on the inquiry detail page
+- Added **Spam Rule Center** in the backend for honeypot, links, duplicates, rate limits, keywords, and disposable email domains
+- Added filtering by **Has Note** in inquiry list
+- API now stores mapped payload data into `extra_data` when field mapping is applied
 
 ## Environment
 
@@ -29,18 +28,16 @@ A pure PHP + MySQL inquiry management system for collecting inquiry forms from m
 4. Point your web root to `public/`
 5. Open the project in your browser
 
-## Upgrading from v0.2.0
+## Upgrading from v0.3.0
 
-If you already have a v0.2.0 database, run:
+If you already have a v0.3.0 database, run:
 
-- `database/upgrade-v0.3.0.sql`
+- `database/upgrade-v0.4.0.sql`
 
 This adds:
 
-- `signature_secret`
-- `require_signature`
-
-to the `inquiry_sites` table.
+- `field_mapping_json` on `inquiry_sites`
+- default `spam_rules` in `system_settings`
 
 ## Default Admin Account
 
@@ -57,6 +54,7 @@ to the `inquiry_sites` table.
 - `/sites/edit?id=1`
 - `/logs`
 - `/tools/blacklist-ips`
+- `/tools/spam-rules`
 - `/profile`
 
 ## API Routes
@@ -105,6 +103,23 @@ Supported payload types:
 
 Unknown fields will also be merged into `extra_data` automatically.
 
+## Field Mapping JSON
+
+You can configure a site-level JSON mapping in the backend to transform external field names into the system's standard fields before validation and storage.
+
+Example:
+
+```json
+{
+  "name": ["fullname", "your_name"],
+  "email": ["user_email", "contact_email"],
+  "title": ["subject"],
+  "content": ["message", "comments"],
+  "from_company": ["company", "company_name"],
+  "phone": ["mobile", "tel"]
+}
+```
+
 ## Signed Request Mode
 
 For sites with **Require HMAC signature** enabled:
@@ -117,6 +132,18 @@ Recommended usage:
 1. Your website backend builds the final request body
 2. Your website backend signs the raw body with the site's signature secret
 3. Your website backend sends the request to the central inquiry system
+
+## Spam Rule Center
+
+The backend now includes a configurable spam rule center for:
+
+- honeypot field check
+- link threshold check
+- duplicate submission check
+- IP rate limit
+- email rate limit
+- keyword-based spam detection
+- disposable email domain detection
 
 ## Example Files
 
@@ -133,8 +160,8 @@ Workflow file:
 It creates a ZIP package automatically when you push a tag like:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v0.4.0
+git push origin v0.4.0
 ```
 
 ## Notes
@@ -142,7 +169,7 @@ git push origin v0.3.0
 Recommended production flow:
 
 1. Website form submits to the current website backend
-2. The current website backend forwards the payload to this central system
+2. The current website backend maps and forwards the payload to this central system
 3. This system validates, filters, stores, and manages the inquiry
 
 This is safer than exposing tokens directly in front-end JavaScript.

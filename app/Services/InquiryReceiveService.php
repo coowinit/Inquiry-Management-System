@@ -35,6 +35,7 @@ final class InquiryReceiveService
 
     public function handle(array $payload, array $serverMeta = []): array
     {
+        $rawPayload = $payload;
         $siteKey = trim((string) ($payload['site_key'] ?? ''));
         $apiToken = trim((string) ($payload['api_token'] ?? $serverMeta['api_token'] ?? ''));
 
@@ -59,6 +60,8 @@ final class InquiryReceiveService
                 return $signatureCheck;
             }
         }
+
+        $payload = $this->applySiteFieldMapping($payload, $site);
 
         $name = trim((string) ($payload['name'] ?? ''));
         $email = trim((string) ($payload['email'] ?? ''));
@@ -87,40 +90,71 @@ final class InquiryReceiveService
             return $this->error('IP_BLOCKED', 'This IP address is blocked.', 403);
         }
 
+        $rules = (new SpamRuleService())->getRules();
         $reasonBag = [];
-        $apiConfig = (array) config('app.api', []);
-        $honeypotField = (string) ($apiConfig['honeypot_field'] ?? 'website');
 
-        if (!empty($payload[$honeypotField])) {
-            $reasonBag[] = 'honeypot_triggered';
+        if (!empty($rules['enable_honeypot'])) {
+            $honeypotField = (string) ($rules['honeypot_field'] ?? 'website');
+            if ($honeypotField !== '' && !empty($payload[$honeypotField])) {
+                $reasonBag[] = 'honeypot_triggered';
+            }
         }
 
-        $linkThreshold = (int) ($apiConfig['spam_link_threshold'] ?? 2);
-        $linkCount = preg_match_all('/https?:\/\//i', $content) ?: 0;
-        if ($linkCount >= $linkThreshold) {
-            $reasonBag[] = 'too_many_links';
+        if (!empty($rules['enable_link_check'])) {
+            $linkThreshold = max(1, (int) ($rules['spam_link_threshold'] ?? 2));
+            $linkCount = preg_match_all('/https?:\/\//i', $content) ?: 0;
+            if ($linkCount >= $linkThreshold) {
+                $reasonBag[] = 'too_many_links';
+            }
         }
 
-        $duplicateWindow = (int) ($apiConfig['duplicate_window_minutes'] ?? 10);
-        if ($this->inquiryModel->existsRecentDuplicate($email, $content, $duplicateWindow)) {
-            $reasonBag[] = 'duplicate_recent_submission';
+        if (!empty($rules['enable_duplicate_check'])) {
+            $duplicateWindow = max(1, (int) ($rules['duplicate_window_minutes'] ?? 10));
+            if ($this->inquiryModel->existsRecentDuplicate($email, $content, $duplicateWindow)) {
+                $reasonBag[] = 'duplicate_recent_submission';
+            }
         }
 
-        $ipWindow = (int) ($apiConfig['ip_rate_limit_window_minutes'] ?? 10);
-        $ipMax = (int) ($apiConfig['ip_rate_limit_max'] ?? 8);
-        if ($this->inquiryModel->recentCountByIp($clientIp, $ipWindow) >= $ipMax) {
-            $reasonBag[] = 'ip_rate_limit';
+        if (!empty($rules['enable_ip_rate_limit'])) {
+            $ipWindow = max(1, (int) ($rules['ip_rate_limit_window_minutes'] ?? 10));
+            $ipMax = max(1, (int) ($rules['ip_rate_limit_max'] ?? 8));
+            if ($this->inquiryModel->recentCountByIp($clientIp, $ipWindow) >= $ipMax) {
+                $reasonBag[] = 'ip_rate_limit';
+            }
         }
 
-        $emailWindow = (int) ($apiConfig['email_rate_limit_window_minutes'] ?? 10);
-        $emailMax = (int) ($apiConfig['email_rate_limit_max'] ?? 5);
-        if ($this->inquiryModel->recentCountByEmail($email, $emailWindow) >= $emailMax) {
-            $reasonBag[] = 'email_rate_limit';
+        if (!empty($rules['enable_email_rate_limit'])) {
+            $emailWindow = max(1, (int) ($rules['email_rate_limit_window_minutes'] ?? 10));
+            $emailMax = max(1, (int) ($rules['email_rate_limit_max'] ?? 5));
+            if ($this->inquiryModel->recentCountByEmail($email, $emailWindow) >= $emailMax) {
+                $reasonBag[] = 'email_rate_limit';
+            }
+        }
+
+        if (!empty($rules['enable_keyword_check'])) {
+            $haystack = strtolower(trim(($payload['title'] ?? '') . "\n" . $content));
+            foreach (($rules['spam_keywords'] ?? []) as $keyword) {
+                $keyword = strtolower(trim((string) $keyword));
+                if ($keyword !== '' && str_contains($haystack, $keyword)) {
+                    $reasonBag[] = 'spam_keyword:' . $keyword;
+                    break;
+                }
+            }
+        }
+
+        if (!empty($rules['enable_disposable_email_domains'])) {
+            $emailDomain = strtolower((string) substr(strrchr($email, '@') ?: '', 1));
+            if ($emailDomain !== '' && in_array($emailDomain, $rules['disposable_email_domains'] ?? [], true)) {
+                $reasonBag[] = 'disposable_email_domain';
+            }
         }
 
         $extraData = $this->collectExtraData($payload);
+        if ($payload !== $rawPayload) {
+            $extraData['_mapped_payload'] = $payload;
+        }
         if (!empty($reasonBag)) {
-            $extraData['_system_flags'] = $reasonBag;
+            $extraData['_system_flags'] = array_values(array_unique($reasonBag));
         }
 
         $submittedAt = null;
@@ -163,12 +197,12 @@ final class InquiryReceiveService
             'is_spam' => $isSpam,
             'admin_note' => null,
             'extra_data' => json_encode($extraData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'raw_payload' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'raw_payload' => json_encode($rawPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'submitted_at' => $submittedAt,
         ];
 
         $inquiryId = $this->inquiryModel->create($record);
-        $this->logModel->create($inquiryId, null, 'api_received', empty($reasonBag) ? 'Accepted as unread' : 'Accepted as spam: ' . implode(', ', $reasonBag));
+        $this->logModel->create($inquiryId, null, 'api_received', empty($reasonBag) ? 'Accepted as unread' : 'Accepted as spam: ' . implode(', ', array_unique($reasonBag)));
 
         return [
             'ok' => true,
@@ -184,10 +218,40 @@ final class InquiryReceiveService
                         'name' => $site['site_name'],
                         'site_key' => $site['site_key'],
                     ],
-                    'flags' => $reasonBag,
+                    'flags' => array_values(array_unique($reasonBag)),
                 ],
             ],
         ];
+    }
+
+    private function applySiteFieldMapping(array $payload, array $site): array
+    {
+        $mapping = $this->siteModel->fieldMapping($site);
+        if (empty($mapping)) {
+            return $payload;
+        }
+
+        foreach ($mapping as $targetField => $aliases) {
+            if (isset($payload[$targetField]) && trim((string) $payload[$targetField]) !== '') {
+                continue;
+            }
+
+            $aliases = is_array($aliases) ? $aliases : [$aliases];
+            foreach ($aliases as $alias) {
+                $alias = (string) $alias;
+                if ($alias === '' || !array_key_exists($alias, $payload)) {
+                    continue;
+                }
+
+                $value = $payload[$alias];
+                if ((is_string($value) && trim($value) !== '') || is_numeric($value) || is_array($value)) {
+                    $payload[$targetField] = $value;
+                    break;
+                }
+            }
+        }
+
+        return $payload;
     }
 
     private function validateSignature(array $site, array $serverMeta): array|bool

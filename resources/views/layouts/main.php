@@ -23,6 +23,7 @@
 
             <div class="nav-group-title">Tools</div>
             <a href="<?= e(base_url('tools/blacklist-ips')) ?>" class="nav-link <?= request_path() === '/tools/blacklist-ips' ? 'is-active' : '' ?>">Blocked IPs</a>
+            <a href="<?= e(base_url('tools/spam-rules')) ?>" class="nav-link <?= request_path() === '/tools/spam-rules' ? 'is-active' : '' ?>">Spam Rule Center</a>
 
             <div class="nav-group-title">Settings</div>
             <a href="<?= e(base_url('profile')) ?>" class="nav-link <?= request_path() === '/profile' ? 'is-active' : '' ?>">My Profile</a>

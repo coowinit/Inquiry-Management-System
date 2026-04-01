@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.4.0
+
+- Added site-level Field Mapping JSON
+- Added admin note editing in inquiry detail page
+- Added inquiry list filter for inquiries with or without notes
+- Added Spam Rule Center page in backend
+- Added configurable rules for honeypot, links, duplicates, rate limits, keywords, and disposable email domains
+- Added `system_settings` model and spam rule service
+- Added database upgrade script for v0.4.0
+- Updated receive API to apply field mapping before validation
+- Updated receive API to include mapped payload in `extra_data` when mappings are used
+
 ## v0.3.0
 
 - Added site create and edit functions
