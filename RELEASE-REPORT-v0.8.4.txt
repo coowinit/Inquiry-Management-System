@@ -1,0 +1,22 @@
+Release Report v0.8.4
+=====================
+Version target: v0.8.4
+
+Checks executed
+- php -l resources/views/dashboard/inquiries.php
+- php -l resources/views/dashboard/inquiry-detail.php
+- php -l resources/views/layouts/main.php
+- php scripts/check-release.php
+
+Results
+- Errors: 0
+- Warnings: 0
+
+UI files updated
+- resources/views/dashboard/inquiries.php
+- resources/views/dashboard/inquiry-detail.php
+- public/assets/css/app.css
+
+Database
+- No schema changes
+- Added database/upgrade-v0.8.4.sql as a no-op marker

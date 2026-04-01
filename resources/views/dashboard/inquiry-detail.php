@@ -1,16 +1,21 @@
+<?php
+$logPreview = array_slice($logs ?? [], 0, 3);
+$remainingLogs = max(0, count($logs ?? []) - count($logPreview));
+?>
+
 <div class="ims-back-row">
     <a href="<?= e(base_url('inquiries')) ?>" class="btn btn-soft">← Back to list</a>
 </div>
 
-<section class="card ims-detail-hero">
+<section class="card ims-detail-hero ims-detail-hero-polished">
     <div class="card-body p-0">
-        <div class="ims-detail-hero-grid">
+        <div class="ims-detail-hero-grid ims-detail-hero-grid-polished">
             <div class="ims-detail-main">
                 <div class="page-section-overline">Inquiry summary</div>
                 <h2 class="ims-detail-title"><?= e($inquiry['title'] ?: 'Untitled inquiry') ?></h2>
                 <p class="ims-detail-lead"><?= e($inquiry['content'] ? mb_strimwidth((string) $inquiry['content'], 0, 220, '...') : 'No content.') ?></p>
 
-                <div class="ims-hero-contact-grid">
+                <div class="ims-hero-contact-grid ims-hero-contact-grid-polished">
                     <div class="ims-hero-contact-card">
                         <div class="ims-hero-label">Contact</div>
                         <div class="ims-hero-value"><?= e($inquiry['name']) ?></div>
@@ -30,7 +35,7 @@
             </div>
 
             <div class="ims-detail-side">
-                <div class="ims-side-summary-card">
+                <div class="ims-side-summary-card ims-side-summary-card-polished">
                     <div class="ims-side-summary-head">
                         <span class="status-badge status-<?= e($inquiry['status']) ?>"><?= e(ucfirst((string) $inquiry['status'])) ?></span>
                         <div class="ims-side-summary-id">Inquiry #<?= (int) $inquiry['id'] ?></div>
@@ -60,20 +65,20 @@
     </div>
 </section>
 
-<div class="ims-detail-layout">
+<div class="ims-detail-layout ims-detail-layout-polished">
     <div class="ims-detail-primary">
-        <section class="card ims-card">
+        <section class="card ims-card ims-card-compact">
             <div class="card-header">
                 <div class="page-section-overline">Customer message</div>
                 <h2>Inquiry content</h2>
             </div>
             <div class="card-body">
-                <div class="ims-content-box"><?= nl2br(e($inquiry['content'] ?: '-')) ?></div>
+                <div class="ims-content-box ims-content-box-polished"><?= nl2br(e($inquiry['content'] ?: '-')) ?></div>
             </div>
         </section>
 
         <?php if ($canUpdate): ?>
-            <section class="card ims-card">
+            <section class="card ims-card ims-card-compact">
                 <div class="card-header">
                     <div class="page-section-overline">Internal note</div>
                     <h2>Admin note</h2>
@@ -85,7 +90,7 @@
                         <div class="col-12">
                             <label class="form-label mb-0">
                                 <span>Admin note</span>
-                                <textarea name="admin_note" class="form-input" rows="6" placeholder="Add internal summary, priority or customer context..."><?= e((string) ($inquiry['admin_note'] ?? '')) ?></textarea>
+                                <textarea name="admin_note" class="form-input ims-note-input" rows="5" placeholder="Add internal summary, priority or customer context..."><?= e((string) ($inquiry['admin_note'] ?? '')) ?></textarea>
                             </label>
                         </div>
                         <div class="col-12 d-flex justify-content-end">
@@ -96,7 +101,7 @@
             </section>
         <?php endif; ?>
 
-        <section class="card ims-card">
+        <section class="card ims-card ims-card-compact">
             <div class="card-header split-header align-items-start">
                 <div>
                     <div class="page-section-overline">Follow-up history</div>
@@ -108,11 +113,11 @@
                 <?php if (empty($followups)): ?>
                     <p class="muted mb-0">No follow-up records yet.</p>
                 <?php else: ?>
-                    <div class="ims-timeline">
+                    <div class="ims-timeline ims-timeline-polished">
                         <?php foreach ($followups as $followup): ?>
                             <article class="ims-timeline-item">
                                 <div class="ims-timeline-dot <?= !empty($followup['is_completed']) ? 'is-done' : '' ?>"></div>
-                                <div class="ims-timeline-card">
+                                <div class="ims-timeline-card ims-timeline-card-polished">
                                     <div class="split-header align-items-start gap-3">
                                         <div>
                                             <div class="table-title mb-1"><?= e(ucfirst((string) $followup['followup_type'])) ?></div>
@@ -155,7 +160,7 @@
                                                 <div class="col-12">
                                                     <label class="checkbox-row">
                                                         <input type="checkbox" name="is_completed" value="1" <?= !empty($followup['is_completed']) ? 'checked' : '' ?>>
-                                                        <span>Mark this follow-up as completed</span>
+                                                        <span>Completed</span>
                                                     </label>
                                                 </div>
                                                 <div class="col-12">
@@ -184,11 +189,57 @@
                 <?php endif; ?>
             </div>
         </section>
+
+        <?php if ($canUpdate): ?>
+            <section class="card ims-card ims-card-compact">
+                <div class="card-header">
+                    <div class="page-section-overline">Next action</div>
+                    <h2>Add follow-up</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="<?= e(base_url('inquiry/followup')) ?>" class="row g-3">
+                        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
+                        <div class="col-md-4">
+                            <label class="form-label mb-0">
+                                <span>Type</span>
+                                <select name="followup_type" class="form-input">
+                                    <?php foreach (['note', 'email', 'call', 'meeting', 'todo', 'status'] as $type): ?>
+                                        <option value="<?= e($type) ?>"><?= e(ucfirst($type)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label mb-0">
+                                <span>Next contact at</span>
+                                <input type="datetime-local" name="next_contact_at" class="form-input">
+                            </label>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <label class="checkbox-row w-100 justify-content-center">
+                                <input type="checkbox" name="is_completed" value="1">
+                                <span>Mark completed</span>
+                            </label>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label mb-0">
+                                <span>Follow-up content</span>
+                                <textarea name="content" class="form-input" rows="4" placeholder="Write what happened, what to send next, or the next action item..."></textarea>
+                            </label>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">Add follow-up</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        <?php endif; ?>
     </div>
 
-    <aside class="ims-detail-secondary">
+    <aside class="ims-detail-secondary ims-sticky-column">
         <?php if ($canUpdate): ?>
-            <section class="card ims-card">
+            <section class="card ims-card ims-card-compact">
                 <div class="card-header">
                     <div class="page-section-overline">Quick actions</div>
                     <h2>Owner &amp; status</h2>
@@ -237,59 +288,13 @@
             </section>
         <?php endif; ?>
 
-        <?php if ($canUpdate): ?>
-            <section class="card ims-card">
-                <div class="card-header">
-                    <div class="page-section-overline">Next action</div>
-                    <h2>Add follow-up</h2>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="<?= e(base_url('inquiry/followup')) ?>" class="row g-3">
-                        <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
-                        <input type="hidden" name="id" value="<?= (int) $inquiry['id'] ?>">
-                        <div class="col-md-6">
-                            <label class="form-label mb-0">
-                                <span>Type</span>
-                                <select name="followup_type" class="form-input">
-                                    <?php foreach (['note', 'email', 'call', 'meeting', 'todo', 'status'] as $type): ?>
-                                        <option value="<?= e($type) ?>"><?= e(ucfirst($type)) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label mb-0">
-                                <span>Next contact at</span>
-                                <input type="datetime-local" name="next_contact_at" class="form-input">
-                            </label>
-                        </div>
-                        <div class="col-12">
-                            <label class="checkbox-row">
-                                <input type="checkbox" name="is_completed" value="1">
-                                <span>Mark this follow-up as completed</span>
-                            </label>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label mb-0">
-                                <span>Follow-up content</span>
-                                <textarea name="content" class="form-input" rows="5" placeholder="Write what happened, what to send next, or the next action item..."></textarea>
-                            </label>
-                        </div>
-                        <div class="col-12 d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary w-100">Add follow-up</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-        <?php endif; ?>
-
-        <section class="card ims-card">
+        <section class="card ims-card ims-card-compact">
             <div class="card-header">
                 <div class="page-section-overline">Source &amp; tracking</div>
                 <h2>Inquiry metadata</h2>
             </div>
             <div class="card-body">
-                <dl class="ims-meta-list">
+                <dl class="ims-meta-list ims-meta-list-compact">
                     <div><dt>Name</dt><dd><?= e($inquiry['name']) ?></dd></div>
                     <div><dt>Email</dt><dd><?= e($inquiry['email']) ?></dd></div>
                     <div><dt>Phone</dt><dd><?= e($inquiry['phone'] ?: '-') ?></dd></div>
@@ -308,7 +313,7 @@
             </div>
         </section>
 
-        <section class="card ims-card">
+        <section class="card ims-card ims-card-compact">
             <div class="card-header">
                 <div class="page-section-overline">Structured fields</div>
                 <h2>Extra data</h2>
@@ -317,7 +322,7 @@
                 <?php if (empty($extraData)): ?>
                     <p class="muted mb-0">No extra fields.</p>
                 <?php else: ?>
-                    <dl class="ims-meta-list">
+                    <dl class="ims-meta-list ims-meta-list-compact">
                         <?php foreach ($extraData as $key => $value): ?>
                             <div>
                                 <dt><?= e((string) $key) ?></dt>
@@ -329,29 +334,46 @@
             </div>
         </section>
 
-        <section class="card ims-card">
-            <div class="card-header">
-                <div class="page-section-overline">Recent activity</div>
-                <h2>Recent logs</h2>
+        <section class="card ims-card ims-card-compact">
+            <div class="card-header split-header align-items-start">
+                <div>
+                    <div class="page-section-overline">Recent activity</div>
+                    <h2>Recent logs</h2>
+                </div>
+                <span class="badge-neutral"><?= (int) count($logs) ?></span>
             </div>
             <div class="card-body">
                 <?php if (empty($logs)): ?>
                     <p class="muted mb-0">No related logs yet.</p>
                 <?php else: ?>
-                    <div class="ims-log-list">
-                        <?php foreach ($logs as $log): ?>
-                            <div class="ims-log-item">
+                    <div class="ims-log-list ims-log-list-compact">
+                        <?php foreach ($logPreview as $log): ?>
+                            <div class="ims-log-item ims-log-item-compact">
                                 <div class="table-title mb-1"><?= e($log['action']) ?></div>
                                 <div class="simple-list-meta"><?= e($log['admin_nickname'] ?: $log['admin_username'] ?: 'System') ?> · <?= e((string) $log['created_at']) ?></div>
                                 <?php if (!empty($log['action_note'])): ?><div class="ims-sub-line mt-2"><?= e($log['action_note']) ?></div><?php endif; ?>
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    <?php if ($remainingLogs > 0): ?>
+                        <details class="ims-compact-details mt-3">
+                            <summary>Show <?= (int) $remainingLogs ?> more log entr<?= $remainingLogs === 1 ? 'y' : 'ies' ?></summary>
+                            <div class="ims-log-list ims-log-list-compact mt-3">
+                                <?php foreach (array_slice($logs, 3) as $log): ?>
+                                    <div class="ims-log-item ims-log-item-compact">
+                                        <div class="table-title mb-1"><?= e($log['action']) ?></div>
+                                        <div class="simple-list-meta"><?= e($log['admin_nickname'] ?: $log['admin_username'] ?: 'System') ?> · <?= e((string) $log['created_at']) ?></div>
+                                        <?php if (!empty($log['action_note'])): ?><div class="ims-sub-line mt-2"><?= e($log['action_note']) ?></div><?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </section>
 
-        <section class="card ims-card">
+        <section class="card ims-card ims-card-compact">
             <div class="card-header">
                 <div class="page-section-overline">Raw payload</div>
                 <h2>JSON snapshot</h2>
@@ -360,9 +382,9 @@
                 <?php if (empty($rawPayload)): ?>
                     <p class="muted mb-0">No raw payload.</p>
                 <?php else: ?>
-                    <details class="ims-edit-panel">
+                    <details class="ims-compact-details">
                         <summary>Show raw payload</summary>
-                        <pre class="code-box code-box-tall mt-3"><?= e(json_encode($rawPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?></pre>
+                        <pre class="code-box mt-3"><?= e(json_encode($rawPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?></pre>
                     </details>
                 <?php endif; ?>
             </div>

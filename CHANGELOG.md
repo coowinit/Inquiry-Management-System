@@ -1,3 +1,12 @@
+## v0.8.4
+- UI polish pass for Inquiry Management and Inquiry Detail.
+- Compressed the filter/export area and grouped less-used export fields.
+- Tightened the export template block and bulk toolbar.
+- Reduced visual noise in the table and aligned inline row actions.
+- Moved Add Follow-up into the main content flow for better detail-page balance.
+- Shortened the right rail with compact metadata, log preview, and collapsed raw payload.
+- Refined card spacing, timeline styling, and summary panel hierarchy.
+
 # Changelog
 
 ## v0.8.3
