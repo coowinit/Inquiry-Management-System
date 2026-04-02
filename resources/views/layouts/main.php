@@ -26,7 +26,7 @@
                 <a href="<?= e(base_url('sites')) ?>" class="nav-link <?= request_path() === '/sites' || request_path() === '/sites/edit' ? 'is-active' : '' ?>">Sites &amp; API</a>
             <?php endif; ?>
             <?php if (\App\Core\Auth::can('tools.view')): ?>
-                <a href="<?= e(base_url('admins')) ?>" class="nav-link <?= request_path() === '/admins' ? 'is-active' : '' ?>">Admin Users</a>
+                <a href="<?= e(base_url('admins')) ?>" class="nav-link <?= in_array(request_path(), ['/admins', '/admins/edit'], true) ? 'is-active' : '' ?>">Admin Users</a>
             <?php endif; ?>
             <?php if (\App\Core\Auth::can('logs.view')): ?>
                 <a href="<?= e(base_url('logs')) ?>" class="nav-link <?= request_path() === '/logs' ? 'is-active' : '' ?>">System Logs</a>

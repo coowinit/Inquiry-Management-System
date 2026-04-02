@@ -98,12 +98,41 @@ final class Admin
         ]);
     }
 
+    public function updateManagedUser(int $id, array $data): bool
+    {
+        $sql = 'UPDATE admins
+                SET nickname = :nickname,
+                    email = :email,
+                    role = :role,
+                    status = :status,
+                    updated_at = NOW()
+                WHERE id = :id';
+        $stmt = Database::connection()->prepare($sql);
+        return $stmt->execute([
+            'nickname' => $data['nickname'],
+            'email' => $data['email'],
+            'role' => $data['role'],
+            'status' => $data['status'],
+            'id' => $id,
+        ]);
+    }
+
     public function updateRoleAndStatus(int $id, string $role, string $status): bool
     {
         $sql = 'UPDATE admins SET role = :role, status = :status, updated_at = NOW() WHERE id = :id';
         $stmt = Database::connection()->prepare($sql);
         return $stmt->execute([
             'role' => $role,
+            'status' => $status,
+            'id' => $id,
+        ]);
+    }
+
+    public function updateStatus(int $id, string $status): bool
+    {
+        $sql = 'UPDATE admins SET status = :status, updated_at = NOW() WHERE id = :id';
+        $stmt = Database::connection()->prepare($sql);
+        return $stmt->execute([
             'status' => $status,
             'id' => $id,
         ]);
@@ -117,6 +146,26 @@ final class Admin
             'password_hash' => $passwordHash,
             'id' => $id,
         ]);
+    }
+
+    public function countActiveAdmins(?string $role = null, ?int $excludeId = null): int
+    {
+        $sql = 'SELECT COUNT(*) FROM admins WHERE status = :status';
+        $params = ['status' => 'active'];
+
+        if ($role !== null) {
+            $sql .= ' AND role = :role';
+            $params['role'] = $role;
+        }
+
+        if ($excludeId !== null) {
+            $sql .= ' AND id <> :exclude_id';
+            $params['exclude_id'] = $excludeId;
+        }
+
+        $stmt = Database::connection()->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
     }
 
     public function touchLastLogin(int $id): bool

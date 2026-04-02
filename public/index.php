@@ -55,8 +55,11 @@ $router->post('/sites/rotate-token', [SiteController::class, 'rotateToken'], tru
 $router->post('/sites/rotate-signature-secret', [SiteController::class, 'rotateSignatureSecret'], true);
 
 $router->get('/admins', [AdminController::class, 'index'], true);
+$router->get('/admins/edit', [AdminController::class, 'edit'], true);
 $router->post('/admins/create', [AdminController::class, 'create'], true);
 $router->post('/admins/update-meta', [AdminController::class, 'updateMeta'], true);
+$router->post('/admins/update', [AdminController::class, 'update'], true);
+$router->post('/admins/toggle-status', [AdminController::class, 'toggleStatus'], true);
 
 $router->get('/logs', [LogController::class, 'index'], true);
 $router->get('/api-logs', [ApiLogController::class, 'index'], true);

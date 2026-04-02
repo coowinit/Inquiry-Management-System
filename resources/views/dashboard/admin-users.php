@@ -16,21 +16,37 @@
 
 <div class="card">
     <div class="card-header split-header"><h2>Admin Users</h2><div class="muted">Total: <?= e((string) $pagination['total']) ?></div></div>
-    <div class="table-wrap"><table class="data-table"><thead><tr><th>ID</th><th>User</th><th>Role</th><th>Status</th><th>Assigned Inquiries</th><th>Last Login</th><th>Update</th></tr></thead><tbody>
+    <div class="table-wrap"><table class="data-table"><thead><tr><th>ID</th><th>User</th><th>Role</th><th>Status</th><th>Assigned Inquiries</th><th>Last Login</th><th>Actions</th></tr></thead><tbody>
     <?php if (empty($pagination['data'])): ?><tr><td colspan="7" class="empty-cell">No users found.</td></tr><?php else: ?>
         <?php foreach ($pagination['data'] as $row): ?>
+            <?php $isDisabled = ($row['status'] ?? 'active') === 'disabled'; ?>
             <tr>
                 <td>#<?= e((string) $row['id']) ?></td>
-                <td><div class="table-title"><?= e($row['nickname'] ?: $row['username']) ?></div><div class="table-sub"><?= e($row['username']) ?> · <?= e($row['email']) ?></div></td>
                 <td>
-                    <form method="post" action="<?= e(base_url('admins/update-meta')) ?>" class="inline-form">
+                    <div class="table-title"><?= e($row['nickname'] ?: $row['username']) ?></div>
+                    <div class="table-sub"><?= e($row['username']) ?> · <?= e($row['email']) ?></div>
+                </td>
+                <td>
+                    <form method="post" action="<?= e(base_url('admins/update-meta')) ?>" class="inline-form admin-inline-meta-form">
                         <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>"><input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
                         <select name="role" class="form-input form-input-sm"><?php foreach (['admin','manager','agent','viewer'] as $role): ?><option value="<?= e($role) ?>" <?= ($row['role'] ?? 'admin') === $role ? 'selected' : '' ?>><?= e(ucfirst($role)) ?></option><?php endforeach; ?></select>
                 </td>
                 <td><select name="status" class="form-input form-input-sm"><?php foreach (['active','disabled'] as $status): ?><option value="<?= e($status) ?>" <?= ($row['status'] ?? 'active') === $status ? 'selected' : '' ?>><?= e(ucfirst($status)) ?></option><?php endforeach; ?></select></td>
                 <td><?= e((string) ($row['assigned_inquiry_count'] ?? 0)) ?></td>
                 <td><?= e((string) ($row['last_login_at'] ?: '-')) ?></td>
-                <td><button type="submit" class="btn btn-sm">Save</button></form></td>
+                <td>
+                    <div class="admin-user-actions">
+                        <button type="submit" class="btn btn-sm">Save role/status</button>
+                    </form>
+                        <a href="<?= e(base_url('admins/edit?id=' . (int) $row['id'])) ?>" class="btn btn-sm btn-soft">Edit</a>
+                        <form method="post" action="<?= e(base_url('admins/toggle-status')) ?>" class="inline-form" onsubmit="return confirm('<?= e($isDisabled ? 'Enable this account?' : 'Disable this account?') ?>');">
+                            <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+                            <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
+                            <input type="hidden" name="target_status" value="<?= e($isDisabled ? 'active' : 'disabled') ?>">
+                            <button type="submit" class="btn btn-sm <?= $isDisabled ? 'btn-soft' : '' ?>"><?= e($isDisabled ? 'Enable' : 'Disable') ?></button>
+                        </form>
+                    </div>
+                </td>
             </tr>
         <?php endforeach; ?>
     <?php endif; ?>

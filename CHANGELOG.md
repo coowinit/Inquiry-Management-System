@@ -1,3 +1,8 @@
+## v0.8.5 - 2026-04-02
+- enhanced Admin Users management with Edit page and safe Disable/Enable actions
+- added password reset fields on admin edit page without changing database config
+- protected against disabling your own account or removing the last active admin account
+
 ## v0.8.4
 - UI polish pass for Inquiry Management and Inquiry Detail.
 - Compressed the filter/export area and grouped less-used export fields.
