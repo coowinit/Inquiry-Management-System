@@ -85,7 +85,7 @@ code {
 
 .nav-link {
     display: block;
-    padding: 11px 14px;
+    padding: 2px 14px;
     border-radius: 14px;
     color: #e5edf8;
     margin-bottom: 5px;
@@ -140,7 +140,7 @@ code {
     box-shadow: var(--shadow-sm);
 }
 
-.card + .card { margin-top: 18px; }
+.card + .card { margin-top: 0; }
 
 .card-header {
     padding: 18px 22px;
@@ -1391,7 +1391,7 @@ textarea.form-input {
 .ims-filter-buttons {
     display: flex;
     gap: 10px;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: end;
 }
 

@@ -253,24 +253,26 @@ $exportGroups = [
             <div class="ims-toolbar ims-toolbar-tight">
                 <form id="bulkInquiryForm" method="post" action="<?= e(base_url('inquiries/bulk')) ?>" class="ims-bulk-form ims-bulk-form-tight">
                     <input type="hidden" name="_csrf" value="<?= e($csrfToken) ?>">
+
                     <div class="ims-toolbar-field">
                         <label class="form-label mb-0">
                             <span>Bulk action</span>
-                            <select name="bulk_action" class="form-input form-input-sm">
+                            <select id="bulkActionSelect" name="bulk_action" class="form-input form-input-sm">
                                 <option value="">Choose an action</option>
                                 <option value="mark_unread">Mark unread</option>
                                 <option value="mark_read">Mark read</option>
                                 <option value="mark_spam">Mark spam</option>
                                 <option value="move_trash">Move to trash</option>
-                                <option value="assign_owner">Assign owner</option>
-                                <option value="clear_owner">Clear owner</option>
+                                <option value="assign_selected">Assign owner</option>
+                                <option value="clear_assignee">Clear owner</option>
                             </select>
                         </label>
                     </div>
-                    <div class="ims-toolbar-field">
+
+                    <div id="bulkOwnerField" class="ims-toolbar-field d-none">
                         <label class="form-label mb-0">
                             <span>Owner</span>
-                            <select name="assigned_admin_id" class="form-input form-input-sm">
+                            <select id="bulkOwnerSelect" name="bulk_assigned_admin_id" class="form-input form-input-sm" disabled>
                                 <option value="">Choose owner</option>
                                 <?php foreach ($admins as $admin): ?>
                                     <option value="<?= (int) $admin['id'] ?>"><?= e($admin['nickname'] ?: $admin['username']) ?></option>
@@ -278,7 +280,15 @@ $exportGroups = [
                             </select>
                         </label>
                     </div>
-                    <button type="submit" class="btn btn-primary ims-bulk-submit">Run bulk action</button>
+
+                    <div class="ims-toolbar-field ims-toolbar-meta">
+                        <div class="form-label mb-0">
+                            <span>Selected on this page</span>
+                            <div id="bulkSelectionSummary" class="ims-selection-summary">0 rows selected</div>
+                        </div>
+                    </div>
+
+                    <button id="bulkRunButton" type="submit" class="btn btn-primary ims-bulk-submit" disabled>Run bulk action</button>
                 </form>
             </div>
 
@@ -373,4 +383,106 @@ $exportGroups = [
             <?php endif; ?>
         </div>
     </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const bulkForm = document.getElementById('bulkInquiryForm');
+    if (!bulkForm) return;
+
+    const selectAll = document.getElementById('selectAllRows');
+    const rowChecks = Array.from(document.querySelectorAll('.row-check'));
+    const bulkAction = document.getElementById('bulkActionSelect');
+    const ownerField = document.getElementById('bulkOwnerField');
+    const ownerSelect = document.getElementById('bulkOwnerSelect');
+    const runButton = document.getElementById('bulkRunButton');
+    const summary = document.getElementById('bulkSelectionSummary');
+
+    const getSelectedCount = () => rowChecks.filter(function (checkbox) {
+        return checkbox.checked;
+    }).length;
+
+    const updateHeaderCheckbox = () => {
+        const selectedCount = getSelectedCount();
+        const totalCount = rowChecks.length;
+
+        if (!selectAll) return;
+
+        if (selectedCount === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        } else if (selectedCount === totalCount) {
+            selectAll.checked = true;
+            selectAll.indeterminate = false;
+        } else {
+            selectAll.checked = false;
+            selectAll.indeterminate = true;
+        }
+    };
+
+    const updateOwnerVisibility = () => {
+        const needsOwner = bulkAction && bulkAction.value === 'assign_selected';
+        if (!ownerField || !ownerSelect) return;
+
+        ownerField.classList.toggle('d-none', !needsOwner);
+        ownerSelect.disabled = !needsOwner;
+
+        if (!needsOwner) {
+            ownerSelect.value = '';
+        }
+    };
+
+    const updateToolbarState = () => {
+        const selectedCount = getSelectedCount();
+        const action = bulkAction ? bulkAction.value : '';
+        const needsOwner = action === 'assign_selected';
+        const ownerReady = !needsOwner || (ownerSelect && ownerSelect.value !== '');
+
+        if (summary) {
+            summary.textContent = selectedCount + (selectedCount === 1 ? ' row selected' : ' rows selected');
+        }
+
+        if (runButton) {
+            runButton.disabled = !(selectedCount > 0 && action && ownerReady);
+        }
+
+        updateHeaderCheckbox();
+        updateOwnerVisibility();
+    };
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            rowChecks.forEach(function (checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+            updateToolbarState();
+        });
+    }
+
+    rowChecks.forEach(function (checkbox) {
+        checkbox.addEventListener('change', updateToolbarState);
+    });
+
+    if (bulkAction) {
+        bulkAction.addEventListener('change', updateToolbarState);
+    }
+
+    if (ownerSelect) {
+        ownerSelect.addEventListener('change', updateToolbarState);
+    }
+
+    bulkForm.addEventListener('submit', function (event) {
+        const selectedCount = getSelectedCount();
+        const action = bulkAction ? bulkAction.value : '';
+        const needsOwner = action === 'assign_selected';
+        const ownerReady = !needsOwner || (ownerSelect && ownerSelect.value !== '');
+
+        if (!(selectedCount > 0 && action && ownerReady)) {
+            event.preventDefault();
+        }
+    });
+
+    updateToolbarState();
+});
+</script>
+
 </div>
