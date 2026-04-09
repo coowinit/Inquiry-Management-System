@@ -993,19 +993,7 @@ and update `config/app.php` accordingly.
 
 ---
 
-## License / Internal Use
+## License
 
-This repository is currently best treated as:
-
-- company internal project
-- custom business system
-- private operational tool
-
-If you later plan to open source it, add a proper license file and review:
-
-- credentials
-- seed data
-- test tokens
-- private domains
-- example email addresses
+This project is licensed under the MIT License.
 
